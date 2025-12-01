@@ -765,6 +765,28 @@
         localStorage.setItem('current_academy_id', currentAcademyId)
       }
 
+      // ✅ التحقق من حالة قفل الأكاديمية
+      if (currentAcademyId) {
+        const { data: academyStatus, error: statusError } = await supabase
+          .from('academy_status')
+          .select('is_locked, lock_reason')
+          .eq('academy_id', currentAcademyId)
+          .maybeSingle()
+        
+        if (academyStatus && academyStatus.is_locked) {
+          showAlert(`❌ الأكاديمية مغلقة حالياً. السبب: ${academyStatus.lock_reason || 'لم يتم تحديد السبب'}`, 'danger')
+          console.error('🚫 محاولة دخول إلى أكاديمية مقفولة')
+          
+          // إعادة توجيه إلى صفحة تسجيل الدخول بعد 3 ثواني
+          setTimeout(() => {
+            localStorage.removeItem('user_id')
+            localStorage.removeItem('current_academy_id')
+            window.location.href = 'index.html'
+          }, 3000)
+          return
+        }
+      }
+
       document.getElementById('userNameHeader').textContent = `أهلاً، ${currentUserName}`
       await loadDashboard()
     }

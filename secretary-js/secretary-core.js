@@ -612,22 +612,195 @@ function isValidEmail(email) {
 window.isValidEmail = isValidEmail;
 
 // === Stub Functions (Placeholders) ===
-async function loadStudents() {
-  console.log('⚠️ loadStudents called from core');
+async function loadStudents(forceRefresh = false) {
+  try {
+    if (!window.currentAcademyId) {
+      console.error('❌ Academy ID not set');
+      return;
+    }
+
+    const cache = window.dataCache.students;
+    const now = Date.now();
+    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+      window.students = cache.data;
+      return;
+    }
+
+    const { data, error } = await window.supabaseClient
+      .from('students')
+      .select('id, full_name, email, phone, address, birthdate, guardian_name, guardian_phone, notes')
+      .eq('academy_id', window.currentAcademyId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    window.students = data || [];
+    window.dataCache.students = {
+      data: data || [],
+      timestamp: Date.now(),
+      loading: false
+    };
+    
+    console.log('✅ Students loaded:', window.students.length);
+  } catch (error) {
+    console.error('❌ Error loading students:', error);
+  }
 }
 
-async function loadCourses() {
-  console.log('⚠️ loadCourses called from core');
+async function loadCourses(forceRefresh = false) {
+  try {
+    if (!window.currentAcademyId) {
+      console.error('❌ Academy ID not set');
+      return;
+    }
+
+    const cache = window.dataCache.courses;
+    const now = Date.now();
+    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+      window.courses = cache.data;
+      return;
+    }
+
+    const { data, error } = await window.supabaseClient
+      .from('courses')
+      .select('id, course_name, description, price, duration_months, modules_count')
+      .eq('academy_id', window.currentAcademyId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    window.courses = data || [];
+    window.dataCache.courses = {
+      data: data || [],
+      timestamp: Date.now(),
+      loading: false
+    };
+    
+    console.log('✅ Courses loaded:', window.courses.length);
+  } catch (error) {
+    console.error('❌ Error loading courses:', error);
+  }
 }
 
-async function loadSubscriptions() {
-  console.log('⚠️ loadSubscriptions called from core');
+async function loadSubscriptions(forceRefresh = false) {
+  try {
+    if (!window.currentAcademyId) {
+      console.error('❌ Academy ID not set');
+      return;
+    }
+
+    const cache = window.dataCache.subscriptions;
+    const now = Date.now();
+    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+      window.subscriptions = cache.data;
+      return;
+    }
+
+    const { data, error } = await window.supabaseClient
+      .from('subscriptions')
+      .select(`
+        id,
+        student_id,
+        course_id,
+        status,
+        subscribed_at,
+        students(full_name),
+        courses(name, price)
+      `)
+      .eq('academy_id', window.currentAcademyId)
+      .order('subscribed_at', { ascending: false });
+
+    if (error) throw error;
+    
+    // Transform data to match expected format
+    const transformedData = (data || []).map(sub => ({
+      ...sub,
+      student_name: sub.students?.full_name || '-',
+      course_name: sub.courses?.name || '-',
+      course_price: sub.courses?.price || 0,
+      start_date: sub.subscribed_at,
+      end_date: null
+    }));
+    
+    window.subscriptions = transformedData;
+    window.dataCache.subscriptions = {
+      data: transformedData,
+      timestamp: Date.now(),
+      loading: false
+    };
+    
+    console.log('✅ Subscriptions loaded:', window.subscriptions.length);
+  } catch (error) {
+    console.error('❌ Error loading subscriptions:', error);
+  }
 }
 
-async function loadPayments() {
-  console.log('⚠️ loadPayments called from core');
+async function loadPayments(forceRefresh = false) {
+  try {
+    if (!window.currentAcademyId) {
+      console.error('❌ Academy ID not set');
+      return;
+    }
+
+    const cache = window.dataCache.payments;
+    const now = Date.now();
+    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+      window.payments = cache.data;
+      return;
+    }
+
+    const { data, error } = await window.supabaseClient
+      .from('payments')
+      .select('*')
+      .eq('academy_id', window.currentAcademyId)
+      .order('payment_date', { ascending: false });
+
+    if (error) throw error;
+    
+    window.payments = data || [];
+    window.dataCache.payments = {
+      data: data || [],
+      timestamp: Date.now(),
+      loading: false
+    };
+    
+    console.log('✅ Payments loaded:', window.payments.length);
+  } catch (error) {
+    console.error('❌ Error loading payments:', error);
+  }
 }
 
-async function loadAttendance() {
-  console.log('⚠️ loadAttendance called from core');
+async function loadAttendance(forceRefresh = false) {
+  try {
+    if (!window.currentAcademyId) {
+      console.error('❌ Academy ID not set');
+      return;
+    }
+
+    const cache = window.dataCache.attendances;
+    const now = Date.now();
+    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+      window.attendances = cache.data;
+      return;
+    }
+
+    const { data, error } = await window.supabaseClient
+      .from('attendance')
+      .select('*')
+      .eq('academy_id', window.currentAcademyId)
+      .order('attendance_date', { ascending: false });
+
+    if (error) throw error;
+    
+    window.attendances = data || [];
+    window.dataCache.attendances = {
+      data: data || [],
+      timestamp: Date.now(),
+      loading: false
+    };
+    
+    console.log('✅ Attendance loaded:', window.attendances.length);
+  } catch (error) {
+    console.error('❌ Error loading attendance:', error);
+  }
 }

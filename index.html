@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل الدخول | نظام الأكاديميات</title>
-  <link rel="icon" href="./logo2.jpg" type="image/jpeg">
+  <link rel="icon" href="./images/Logo for Alabd with Abstract Icon (1).png" type="image/jpeg">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -27,7 +27,7 @@
     body {
       min-height: 100vh;
       background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), 
-                  url('./images/backraound.jpg') center/cover fixed;
+                  url('./images/Logo\ for\ Alabd\ with\ Abstract\ Icon\ \(1\).png') center/cover fixed;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -302,7 +302,7 @@
 <!-- شاشة تسجيل الدخول -->
 <div id="loginScreen" class="container">
   <div class="logo-container">
-    <img src="./logo2.jpg" alt="logo" class="logo">
+    <img src="./images/Logo for Alabd with Abstract Icon (1).png" alt="logo" class="logo">
   </div>
   <h2>مرحباً بعودتك</h2>
   <p class="subtitle">سجّل دخولك للوصول إلى لوحة التحكم</p>
@@ -327,47 +327,7 @@
   
   <div class="status" id="loginStatus"></div>
   
-  <div class="divider">أو</div>
-  
-  <a href="#" class="link" id="toRegister">إنشاء أكاديمية جديدة ←</a>
-</div>
 
-<!-- شاشة التسجيل -->
-<div id="registerScreen" class="container hidden">
-  <h2>إنشاء أكاديمية جديدة</h2>
-  <p class="subtitle">املأ البيانات التالية لإنشاء أكاديميتك</p>
-  
-  <div class="form-group">
-    <label for="academyName">اسم الأكاديمية *</label>
-    <input type="text" id="academyName" placeholder="مثال: أكاديمية النجاح التعليمية" required>
-  </div>
-  
-  <div class="form-group">
-    <label for="fullName">اسمك الكامل *</label>
-    <input type="text" id="fullName" placeholder="الاسم الكامل" required>
-  </div>
-  
-  <div class="form-group">
-    <label for="regEmail">البريد الإلكتروني *</label>
-    <input type="email" id="regEmail" placeholder="admin@academy.com" required autocomplete="email">
-  </div>
-  
-  <div class="form-group password-toggle">
-    <label for="regPassword">كلمة المرور * (6 أحرف على الأقل)</label>
-    <input type="password" id="regPassword" placeholder="كلمة مرور قوية" minlength="6" required autocomplete="new-password">
-    <span class="toggle-icon" onclick="togglePassword('regPassword')">👁️</span>
-  </div>
-  
-  <button type="button" class="btn-primary" id="createBtn">
-    <span id="createBtnText">إنشاء الأكاديمية</span>
-    <span id="createBtnLoader" class="hidden"><span class="loader"></span></span>
-  </button>
-  
-  <div class="status" id="regStatus"></div>
-  
-  <div class="divider">أو</div>
-  
-  <a href="#" class="link" id="backToLogin">← العودة لتسجيل الدخول</a>
 </div>
 
 <script>
@@ -401,21 +361,6 @@
     input.type = input.type === 'password' ? 'text' : 'password'
   }
   window.togglePassword = togglePassword
-
-  // تبديل بين شاشات الدخول والتسجيل
-  document.getElementById('toRegister').onclick = (e) => {
-    e.preventDefault()
-    document.getElementById('loginScreen').classList.add('hidden')
-    document.getElementById('registerScreen').classList.remove('hidden')
-    hideStatus('loginStatus')
-  }
-
-  document.getElementById('backToLogin').onclick = (e) => {
-    e.preventDefault()
-    document.getElementById('registerScreen').classList.add('hidden')
-    document.getElementById('loginScreen').classList.remove('hidden')
-    hideStatus('regStatus')
-  }
 
   // تسجيل الدخول
   document.getElementById('loginForm').onsubmit = async (e) => {
@@ -515,6 +460,21 @@
           console.error('خطأ في جلب الأكاديمية:', acadError)
         }
 
+        // ✅ التحقق من حالة قفل الأكاديمية
+        const { data: academyStatus, error: statusError } = await supabase
+          .from('academy_status')
+          .select('is_locked, lock_reason')
+          .eq('academy_id', member.academy_id)
+          .maybeSingle()
+
+        console.log('🔒 حالة الأكاديمية:', academyStatus)
+
+        if (academyStatus && academyStatus.is_locked) {
+          showStatus('loginStatus', `❌ الأكاديمية مغلقة حالياً. السبب: ${academyStatus.lock_reason || 'لم يتم تحديد السبب'}`, 'error')
+          console.error('🚫 محاولة دخول إلى أكاديمية مقفولة:', member.academy_id)
+          return
+        }
+
         const academyName = academy?.name || 'أكاديمية غير معروفة'
         const academySlug = academy?.slug || ''
         
@@ -607,153 +567,7 @@
   }
 
   // إنشاء أكاديمية جديدة
-  document.getElementById('createBtn').onclick = async () => {
-    const academyName = document.getElementById('academyName').value.trim()
-    const fullName = document.getElementById('fullName').value.trim()
-    const email = document.getElementById('regEmail').value.trim()
-    const password = document.getElementById('regPassword').value
-    const createBtn = document.getElementById('createBtn')
 
-    // التحقق من البيانات
-    if (!academyName || !fullName || !email || !password) {
-      showStatus('regStatus', 'الرجاء ملء جميع الحقول المطلوبة', 'error')
-      return
-    }
-
-    if (password.length < 6) {
-      showStatus('regStatus', 'كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error')
-      return
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      showStatus('regStatus', 'البريد الإلكتروني غير صحيح', 'error')
-      return
-    }
-
-    // تعطيل الزر وعرض التحميل
-    createBtn.disabled = true
-    document.getElementById('createBtnText').classList.add('hidden')
-    document.getElementById('createBtnLoader').classList.remove('hidden')
-    showStatus('regStatus', 'جاري إنشاء الأكاديمية...', 'info')
-
-    try {
-      // 1. تسجيل المستخدم
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
-      })
-
-      if (authError) {
-        let errorMsg = 'فشل إنشاء الحساب'
-        
-        if (authError.message.includes('already registered')) {
-          errorMsg = 'هذا البريد الإلكتروني مسجل مسبقاً. استخدم بريد آخر أو سجل دخول'
-        } else if (authError.message.includes('Invalid email')) {
-          errorMsg = 'البريد الإلكتروني غير صحيح'
-        } else if (authError.message.includes('Password')) {
-          errorMsg = 'كلمة المرور ضعيفة. استخدم كلمة مرور أقوى'
-        }
-        
-        showStatus('regStatus', errorMsg, 'error')
-        return
-      }
-
-      if (!authData.user) {
-        showStatus('regStatus', 'فشل إنشاء الحساب. حاول مرة أخرى', 'error')
-        return
-      }
-
-      const userId = authData.user.id
-
-      // 2. إنشاء الأكاديمية
-      const slug = academyName
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\-\u0600-\u06FF]/g, '')
-        .substring(0, 50)
-
-      const { data: academy, error: acadError } = await supabase
-        .from('academies')
-        .insert({
-          name: academyName,
-          slug: slug,
-          owner_id: userId,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (acadError) {
-        showStatus('regStatus', 
-          'فشل إنشاء الأكاديمية. قد يكون الاسم مكرراً', 
-          'error'
-        )
-        return
-      }
-
-      // 3. إضافة المستخدم كـ profile
-      await supabase.from('profiles').upsert({
-        id: userId,
-        email: email,
-        full_name: fullName,
-        role: 'admin'
-      })
-
-      // 4. ربط المستخدم بالأكاديمية كـ admin
-      const { error: memberError } = await supabase
-        .from('academy_members')
-        .insert({
-          academy_id: academy.id,
-          user_id: userId,
-          role: 'admin'
-        })
-
-      if (memberError) {
-        showStatus('regStatus', 
-          'تم إنشاء الأكاديمية لكن فشلت إضافة الصلاحيات. تواصل مع الدعم', 
-          'error'
-        )
-        return
-      }
-
-      // حفظ البيانات
-      localStorage.setItem('user_id', userId)
-      localStorage.setItem('user_email', email)
-      localStorage.setItem('user_role', 'admin')
-      localStorage.setItem('current_academy_id', academy.id)
-      localStorage.setItem('current_academy_name', academyName)
-      localStorage.setItem('current_academy_slug', slug)
-
-      showStatus('regStatus', 
-        'تم إنشاء الأكاديمية بنجاح! جاري التوجيه إلى لوحة التحكم...', 
-        'success'
-      )
-
-      // التوجيه بعد ثانيتين
-      setTimeout(() => {
-        window.location.href = 'admin-dashboard.html'
-      }, 2000)
-
-    } catch (err) {
-      console.error('خطأ:', err)
-      showStatus('regStatus', 
-        'حدث خطأ غير متوقع. حاول مرة أخرى', 
-        'error'
-      )
-    } finally {
-      // إعادة تفعيل الزر
-      createBtn.disabled = false
-      document.getElementById('createBtnText').classList.remove('hidden')
-      document.getElementById('createBtnLoader').classList.add('hidden')
-    }
-  }
 </script>
 </body>
 </html>
