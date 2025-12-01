@@ -102,11 +102,11 @@ function renderPaymentsByCourse() {
     const { course, students, stats } = courseData;
     const courseId = course.id;
     const collapsedClass = `paymentsCourse_${courseId}`;
-    
+
     html += `
-      <div class="course-card" style="margin-bottom: 25px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <div class="course-card">
         <!-- Course Header -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; cursor: pointer;" onclick="toggleCoursePayments('${courseId}')">
+        <div class="course-header" onclick="toggleCoursePayments('${courseId}')">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <h3 style="margin: 0; font-size: 1.3em;">📚 ${escapeHtml(course.name)}</h3>
@@ -120,69 +120,66 @@ function renderPaymentsByCourse() {
         </div>
 
         <!-- Course Stats -->
-        <div style="background: #f8f9fa; padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-          <div style="text-align: center; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <p style="margin: 0; font-size: 0.8em; opacity: 0.9;">💵 الإجمالي المتوقع</p>
-            <p style="margin: 6px 0 0 0; font-weight: 700; font-size: 1.2em;">${formatCurrency(stats.totalExpected)}</p>
+        <div class="summary-cards">
+          <div class="summary-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white;">
+            <p>💵 الإجمالي المتوقع</p>
+            <div class="value">${formatCurrency(stats.totalExpected)}</div>
           </div>
-          <div style="text-align: center; padding: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <p style="margin: 0; font-size: 0.8em; opacity: 0.9;">✓ المدفوع</p>
-            <p style="margin: 6px 0 0 0; font-weight: 700; font-size: 1.2em;">${formatCurrency(stats.totalPaidAmount)}</p>
+          <div class="summary-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+            <p>✓ المدفوع</p>
+            <div class="value">${formatCurrency(stats.totalPaidAmount)}</div>
           </div>
-          <div style="text-align: center; padding: 12px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <p style="margin: 0; font-size: 0.8em; opacity: 0.9;">⏳ المتبقي</p>
-            <p style="margin: 6px 0 0 0; font-weight: 700; font-size: 1.2em;">${formatCurrency(stats.totalRemaining)}</p>
+          <div class="summary-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+            <p>⏳ المتبقي</p>
+            <div class="value">${formatCurrency(stats.totalRemaining)}</div>
           </div>
-          <div style="text-align: center; padding: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <p style="margin: 0; font-size: 0.8em; opacity: 0.9;">📊 نسبة التحصيل</p>
-            <p style="margin: 6px 0 0 0; font-weight: 700; font-size: 1.2em;">${stats.totalExpected > 0 ? ((stats.totalPaidAmount / stats.totalExpected) * 100).toFixed(1) : 0}%</p>
+          <div class="summary-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white;">
+            <p>📊 نسبة التحصيل</p>
+            <div class="value">${stats.totalExpected > 0 ? ((stats.totalPaidAmount / stats.totalExpected) * 100).toFixed(1) : 0}%</div>
           </div>
         </div>
 
         <!-- Students Payments Table -->
         <div class="${collapsedClass}" style="overflow: hidden;">
-          <table style="width: 100%; border-collapse: collapse; background: white;">
-            <thead style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
-              <tr>
-                <th style="padding: 12px; text-align: right; border-right: 1px solid #ddd;">👤 الطالب</th>
-                <th style="padding: 12px; text-align: right; border-right: 1px solid #ddd;">💵 سعر الكورس</th>
-                <th style="padding: 12px; text-align: right; border-right: 1px solid #ddd;">✓ المدفوع</th>
-                <th style="padding: 12px; text-align: right; border-right: 1px solid #ddd;">⏳ المتبقي</th>
-                <th style="padding: 12px; text-align: right; border-right: 1px solid #ddd;">📊 الحالة</th>
-                <th style="padding: 12px; text-align: right;">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${students.length === 0 ? `
+          <div class="table-responsive">
+            <table>
+              <thead>
                 <tr>
-                  <td colspan="6" style="padding: 20px; text-align: center; color: #999;">لا يوجد طلاب مسجلين في هذا الكورس</td>
+                  <th>👤 الطالب</th>
+                  <th>💵 سعر الكورس</th>
+                  <th>✓ المدفوع</th>
+                  <th>⏳ المتبقي</th>
+                  <th>📊 الحالة</th>
+                  <th>الإجراءات</th>
                 </tr>
-              ` : students.map(student => {
-                const paidStatus = student.remaining <= 0 ? 'completed' : student.totalPaid > 0 ? 'partial' : 'pending';
-                const statusBg = paidStatus === 'completed' ? '#d1fae5' : paidStatus === 'partial' ? '#fef3c7' : '#fee2e2';
-                const statusColor = paidStatus === 'completed' ? '#059669' : paidStatus === 'partial' ? '#d97706' : '#dc2626';
-                const statusText = paidStatus === 'completed' ? '✓ مكتمل' : paidStatus === 'partial' ? '⚠️ جزئي' : '❌ لم يدفع';
-                
-                return `
-                  <tr style="border-bottom: 1px solid #eee; hover: background: #f9f9f9;">
-                    <td style="padding: 12px; border-right: 1px solid #ddd;">${escapeHtml(student.full_name || '-')}</td>
-                    <td style="padding: 12px; border-right: 1px solid #ddd; font-weight: 600; color: #667eea;">${formatCurrency(student.coursePrice)}</td>
-                    <td style="padding: 12px; border-right: 1px solid #ddd; font-weight: 600; color: #10b981;">${formatCurrency(student.totalPaid)}</td>
-                    <td style="padding: 12px; border-right: 1px solid #ddd; font-weight: 600; color: ${student.remaining > 0 ? '#ef4444' : '#10b981'};">${formatCurrency(student.remaining)}</td>
-                    <td style="padding: 12px; border-right: 1px solid #ddd;">
-                      <span style="background: ${statusBg}; color: ${statusColor}; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">
-                        ${statusText}
-                      </span>
-                    </td>
-                    <td style="padding: 12px;">
-                      <button class="action-btn" onclick="showStudentPaymentDetails('${student.id}', '${courseId}')" style="background: #667eea; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-left: 5px;">👁️</button>
-                      <button class="action-btn" onclick="showAddPaymentModalForStudent('${student.id}', '${courseId}')" style="background: #10b981; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-left: 5px;">➕</button>
-                    </td>
+              </thead>
+              <tbody>
+                ${students.length === 0 ? `
+                  <tr>
+                    <td colspan="6" style="padding: 20px; text-align: center; color: #999;">لا يوجد طلاب مسجلين في هذا الكورس</td>
                   </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
+                ` : students.map(student => {
+                  const paidStatus = student.remaining <= 0 ? 'completed' : student.totalPaid > 0 ? 'partial' : 'pending';
+                  const statusText = paidStatus === 'completed' ? '✓ مكتمل' : paidStatus === 'partial' ? '⚠️ جزئي' : '❌ لم يدفع';
+                  const statusClass = paidStatus === 'completed' ? 'active' : paidStatus === 'partial' ? 'partial' : 'inactive';
+
+                  return `
+                    <tr>
+                      <td data-label="الطالب">${escapeHtml(student.full_name || '-')}</td>
+                      <td data-label="سعر الكورس">${formatCurrency(student.coursePrice)}</td>
+                      <td data-label="المدفوع">${formatCurrency(student.totalPaid)}</td>
+                      <td data-label="المتبقي">${formatCurrency(student.remaining)}</td>
+                      <td data-label="الحالة"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                      <td data-label="الإجراءات">
+                        <button class="action-btn view-btn" onclick="showStudentPaymentDetails('${student.id}', '${courseId}')">👁️</button>
+                        <button class="action-btn edit-btn" onclick="showAddPaymentModalForStudent('${student.id}', '${courseId}')">➕</button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
@@ -221,7 +218,7 @@ function showStudentPaymentDetails(studentId, courseId) {
 
   const detailsHTML = `
     <div class="payment-details-modal">
-      <div class="details-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
+      <div class="details-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
         <h2 style="margin: 0; font-size: 1.5em;">👤 ${escapeHtml(student?.full_name || '-')}</h2>
         <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.9em;">📚 ${escapeHtml(course?.name || '-')}</p>
       </div>
@@ -229,7 +226,7 @@ function showStudentPaymentDetails(studentId, courseId) {
       <div style="padding: 20px;">
         <!-- ملخص الدفع -->
         <div class="details-section">
-          <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin-bottom: 15px;">💰 ملخص الدفع</h3>
+          <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px;">💰 ملخص الدفع</h3>
           <div class="details-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
             <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; text-align: center;">
               <p style="margin: 0; color: #1976d2; font-size: 0.85em;">سعر الكورس</p>
@@ -248,7 +245,7 @@ function showStudentPaymentDetails(studentId, courseId) {
 
         <!-- سجل الدفعات -->
         <div class="details-section" style="margin-top: 20px;">
-          <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin-bottom: 15px;">📋 سجل الدفعات</h3>
+          <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px;">📋 سجل الدفعات</h3>
           ${payments.length === 0 ? `
             <p style="color: #999; text-align: center; padding: 20px;">لا توجد دفعات مسجلة</p>
           ` : `
@@ -431,7 +428,7 @@ function printAllPayments() {
               text-align: right; 
             }
             th { 
-              background-color: #667eea; 
+              background-color: var(--primary); 
               color: white;
               font-weight: bold;
             }
@@ -448,7 +445,7 @@ function printAllPayments() {
               font-size: 0.85em;
             }
             .course-header {
-              background: #667eea;
+              background: var(--primary);
               color: white;
               padding: 10px;
               font-weight: bold;
@@ -529,7 +526,7 @@ function showPaymentReceiptAfterSave(paymentData) {
     const remaining = Math.max(0, (course.price || 0) - totalPaid);
 
     receiptContent.innerHTML = `
-      <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px 8px 0 0;">
+      <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; border-radius: 8px 8px 0 0;">
         <h2 style="margin: 0; font-size: 2em;">🧾 إيصال دفع</h2>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">رقم الإيصال: ${paymentData.id.substring(0, 8).toUpperCase()}</p>
       </div>
@@ -559,8 +556,8 @@ function showPaymentReceiptAfterSave(paymentData) {
         </div>
 
         <!-- معلومات الكورس -->
-        <div style="background: #f3e5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-right: 4px solid #9c27b0;">
-          <h3 style="margin: 0 0 15px 0; color: #9c27b0; font-size: 1.2em;">📚 بيانات الكورس</h3>
+        <div style="background: #f3e5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-right: 4px solid var(--primary);">
+          <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 1.2em;">📚 بيانات الكورس</h3>
           <div style="display: grid; gap: 10px;">
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #666;">اسم الكورس:</span>
@@ -568,7 +565,7 @@ function showPaymentReceiptAfterSave(paymentData) {
             </div>
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #666;">سعر الكورس:</span>
-              <strong style="color: #9c27b0; font-size: 1.1em;">${formatCurrency(course.price || 0)}</strong>
+              <strong style="color: var(--primary); font-size: 1.1em;">${formatCurrency(course.price || 0)}</strong>
             </div>
           </div>
         </div>
@@ -712,13 +709,13 @@ function printPaymentReceipt(paymentId = null) {
             .receipt {
               max-width: 600px;
               margin: 0 auto;
-              border: 2px solid #667eea;
+              border: 2px solid var(--primary);
               border-radius: 12px;
               overflow: hidden;
             }
             
             .header {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
               color: white;
               padding: 30px;
               text-align: center;
@@ -825,15 +822,15 @@ function printPaymentReceipt(paymentId = null) {
               </div>
               
               <!-- بيانات الكورس -->
-              <div class="section" style="background: #f3e5f5; border-right: 4px solid #9c27b0;">
-                <h3 style="color: #9c27b0;">📚 بيانات الكورس</h3>
+              <div class="section" style="background: #f3e5f5; border-right: 4px solid var(--primary);">
+                <h3 style="color: var(--primary);">📚 بيانات الكورس</h3>
                 <div class="info-row">
                   <span class="label">اسم الكورس:</span>
                   <span class="value">${escapeHtml(course.name)}</span>
                 </div>
                 <div class="info-row">
                   <span class="label">سعر الكورس:</span>
-                  <span class="value" style="color: #9c27b0;">${formatCurrency(course.price || 0)}</span>
+                  <span class="value" style="color: var(--primary);">${formatCurrency(course.price || 0)}</span>
                 </div>
               </div>
               

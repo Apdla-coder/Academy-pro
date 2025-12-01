@@ -44,11 +44,14 @@ async function loadDashboardData() {
     // Load recent activity
     await loadRecentActivity();
 
-    // Setup auto-refresh (every 60 seconds instead of 30)
+    // Setup auto-refresh (every 5 minutes - reduced frequency to prevent excessive requests)
     if (dashboardRefreshInterval) clearInterval(dashboardRefreshInterval);
     dashboardRefreshInterval = setInterval(() => {
-      loadRecentActivity();
-    }, 60000);
+      // Only refresh activity, not all data
+      if (typeof loadRecentActivity === 'function') {
+        loadRecentActivity();
+      }
+    }, 5 * 60 * 1000); // 5 minutes instead of 60 seconds
   } catch (error) {
     console.error('❌ Error loading dashboard:', error);
     showStatus('خطأ في تحميل لوحة التحكم', 'error');
@@ -70,23 +73,57 @@ async function loadAllDataForDashboard() {
 
     console.log('🔄 Loading all data for academy:', academyId);
     
-    // Check if data already loaded from secretary-core.js
-    if (window.courses && window.courses.length > 0) {
-      console.log('✅ Found existing courses data from secretary-core.js:', window.courses.length);
-      console.log('📊 Existing courses:', window.courses);
+    // Use existing data loading functions which handle cache automatically
+    // These functions check cache internally and only load if needed
+    const loadPromises = [];
+    
+    if (typeof loadStudents === 'function') {
+      loadPromises.push(loadStudents(false).then(() => ({ type: 'students', success: true })));
+    }
+    if (typeof loadCourses === 'function') {
+      loadPromises.push(loadCourses(false).then(() => ({ type: 'courses', success: true })));
+    }
+    if (typeof loadSubscriptions === 'function') {
+      loadPromises.push(loadSubscriptions(false).then(() => ({ type: 'subscriptions', success: true })));
+    }
+    if (typeof loadPayments === 'function') {
+      loadPromises.push(loadPayments(false).then(() => ({ type: 'payments', success: true })));
+    }
+    if (typeof loadAttendance === 'function') {
+      loadPromises.push(loadAttendance(false).then(() => ({ type: 'attendances', success: true })));
     }
     
-    if (window.students && window.students.length > 0) {
-      console.log('✅ Found existing students data:', window.students.length);
+    // Wait for all loads to complete
+    await Promise.all(loadPromises);
+    
+    // Load teachers separately (no cache for teachers)
+    if (typeof loadTeachers === 'function') {
+      await loadTeachers();
     }
     
-    // If courses already loaded, use them and skip query
-    if (window.courses && window.courses.length > 0) {
-      console.log('✅ Using existing courses data, skipping query');
-      // Still try to reload to get latest data, but don't overwrite if query fails
-    }
+    console.log('✅ Dashboard data loaded');
+  } catch (error) {
+    console.error('❌ Error loading dashboard data:', error);
+    showStatus('خطأ في تحميل بيانات لوحة التحكم', 'error');
+  }
+}
 
-    // Load all data in parallel with error handling
+// Helper function to check if data needs refresh (used by switchTab)
+function needsDataRefresh(dataType) {
+  const cache = window.dataCache[dataType];
+  if (!cache) return true;
+  
+  const now = Date.now();
+  const isStale = (now - cache.timestamp) > CACHE_DURATION;
+  const isEmpty = !window[dataType] || window[dataType].length === 0;
+  
+  return isEmpty || isStale;
+}
+
+/*
+// OLD CODE - removed to reduce requests
+async function loadAllDataForDashboard_OLD() {
+  try {
     const [studentsRes, coursesRes, subscriptionsRes, paymentsRes, attendancesRes, teachersRes] = await Promise.all([
       window.supabaseClient
         .from('students')

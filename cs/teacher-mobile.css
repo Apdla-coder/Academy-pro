@@ -1,19 +1,27 @@
 :root {
-  --primary: #5B8DEE;
-  --primary-dark: #3D5ACE;
-  --primary-light: #E8F0FF;
-  --success: #81C995;
-  --danger: #FC8181;
-  --warning: #F6AD55;
-  --gray: #718096;
-  --border: #E2E8F0;
-  --light: #F7FAFC;
-  --dark: #2D3748;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --shadow: 0 2px 8px rgba(0,0,0,0.1);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+    --primary: #5B8DEE;
+    --primary-dark: #3D5ACE;
+    --primary-light: #E8F0FF;
+    --secondary: #81C995;
+    --secondary-light: #E8F5E9;
+    --dark: #2D3748;
+    --light: #F7FAFC;
+    --gray: #718096;
+    --gray-light: #EDF2F7;
+    --border: #E2E8F0;
+    --success: #81C995;
+    --warning: #F6AD55;
+    --danger: #FC8181;
+    --info: #63B3ED;
+    --waiting: #B19CD9;
+    --sidebar-width: 280px;
+    --header-height: 70px;
+    --shadow-sm: 0 1px 2px rgba(45, 55, 72, 0.05);
+    --shadow-md: 0 4px 6px rgba(45, 55, 72, 0.08);
+    --shadow-lg: 0 8px 12px rgba(45, 55, 72, 0.1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
 }
 
 * {
@@ -44,7 +52,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 15px;
-  z-index: 1000;
+  z-index: 1102;
 }
 
 .menu-toggle {
@@ -88,7 +96,7 @@ body {
 .sidebar-mobile {
   position: fixed;
   top: 0;
-  right: -280px;
+  right: 0; /* visible by default on mobile */
   width: 280px;
   height: 100vh;
   background: #fff;
@@ -172,6 +180,7 @@ body {
   margin-top: 60px;
   padding: 15px;
   min-height: calc(100vh - 60px);
+  margin-right: var(--sidebar-width); /* leave space for visible sidebar */
 }
 
 .tab-content {

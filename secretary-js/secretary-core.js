@@ -13,6 +13,7 @@ window.supabaseClient = null;
 window.currentAcademyId = null;
 window.currentUserId = null;
 window.userRole = null;
+window.realtimeSyncEnabled = true; // Global flag for realtime sync control
 
 window.students = [];
 window.courses = [];
@@ -243,14 +244,22 @@ document.addEventListener('DOMContentLoaded', async function() {
       academyId: window.currentAcademyId
     });
     
-    // Load initial data - جميع البيانات الأساسية
+    // Load initial data - جميع البيانات الأساسية (في parallel لتقليل الوقت)
     console.log('🔄 Loading all data...');
-    await loadCoursesData();
-    await loadStudentsData();
-    await loadSubscriptionsData();
-    await loadPaymentsData();
-    await loadAttendanceData();
-    await loadTeachers();
+    
+    // Disable realtime sync during initial load
+    window.realtimeSyncEnabled = false;
+    
+    // Load all data in parallel
+    await Promise.all([
+      loadCoursesData(),
+      loadStudentsData(),
+      loadSubscriptionsData(),
+      loadPaymentsData(),
+      loadAttendanceData(),
+      loadTeachers()
+    ]);
+    
     await loadDashboardStats();
     console.log('✅ All data loaded');
     
@@ -261,11 +270,15 @@ document.addEventListener('DOMContentLoaded', async function() {
       console.warn('⚠️ setupFormEventListeners not available yet');
     }
     
-    if (typeof setupRealtimeSync === 'function') {
-      setupRealtimeSync();
-    } else {
-      console.warn('⚠️ setupRealtimeSync not available yet');
-    }
+    // Enable realtime sync after initial load
+    setTimeout(() => {
+      window.realtimeSyncEnabled = true;
+      if (typeof setupRealtimeSync === 'function') {
+        setupRealtimeSync();
+      } else {
+        console.warn('⚠️ setupRealtimeSync not available yet');
+      }
+    }, 2000); // Wait 2 seconds after initial load
     
     switchTab('dashboard');
     
@@ -401,6 +414,18 @@ async function loadAttendanceData() {
 }
 
 // === Tab Management ===
+// Helper function to check if data needs refresh
+function needsDataRefresh(dataType) {
+  const cache = window.dataCache[dataType];
+  if (!cache) return true;
+  
+  const now = Date.now();
+  const isStale = (now - cache.timestamp) > CACHE_DURATION;
+  const isEmpty = !window[dataType] || window[dataType].length === 0;
+  
+  return isEmpty || isStale;
+}
+
 function switchTab(tabName) {
   console.log('🔄 Tab switched to:', tabName);
   
@@ -410,32 +435,40 @@ function switchTab(tabName) {
     activeTab.style.display = 'block';
     
     if (tabName === 'dashboard') {
+      // Dashboard loads its own data with cache checking
       if (typeof loadDashboardData === 'function') {
         loadDashboardData();
       }
     }
     else if (tabName === 'students') {
-      if (!window.students || window.students.length === 0) loadStudents();
-      if (!window.subscriptions || window.subscriptions.length === 0) loadSubscriptions();
-      if (!window.payments || window.payments.length === 0) loadPayments();
-      if (!window.courses || window.courses.length === 0) loadCourses();
+      // Only load if data is missing or stale
+      if (needsDataRefresh('students') && typeof loadStudents === 'function') {
+        loadStudents(false); // Use cache if available
+      }
+      // Render existing data immediately
       if (window.students && window.students.length > 0) {
         const container = document.getElementById('studentsContainer');
         if (container && typeof renderStudentsTable === 'function') {
           renderStudentsTable(window.students, container);
         }
+      } else if (typeof loadStudentsTab === 'function') {
+        loadStudentsTab();
       }
     }
     else if (tabName === 'courses') {
-      if (!window.courses || window.courses.length === 0) loadCourses();
-      if (!window.subscriptions || window.subscriptions.length === 0) loadSubscriptions();
-      if (!window.payments || window.payments.length === 0) loadPayments();
+      // Only load if data is missing or stale
+      if (needsDataRefresh('courses') && typeof loadCourses === 'function') {
+        loadCourses(false); // Use cache if available
+      }
       if (typeof loadCoursesTab === 'function') {
         loadCoursesTab();
       }
     }
     else if (tabName === 'subscriptions') {
-      console.log('📋 Subscriptions tab selected - calling loadSubscriptionsTab');
+      // Only load if data is missing or stale
+      if (needsDataRefresh('subscriptions') && typeof loadSubscriptions === 'function') {
+        loadSubscriptions(false); // Use cache if available
+      }
       if (typeof loadSubscriptionsTab === 'function') {
         loadSubscriptionsTab();
       } else {
@@ -453,18 +486,19 @@ function switchTab(tabName) {
       }
     }
     else if (tabName === 'payments') {
-      if (!window.payments || window.payments.length === 0) loadPayments();
-      if (!window.students || window.students.length === 0) loadStudents();
-      if (!window.courses || window.courses.length === 0) loadCourses();
-      if (!window.subscriptions || window.subscriptions.length === 0) loadSubscriptions();
+      // Only load if data is missing or stale
+      if (needsDataRefresh('payments') && typeof loadPayments === 'function') {
+        loadPayments(false); // Use cache if available
+      }
       if (typeof loadPaymentsTab === 'function') {
         loadPaymentsTab();
       }
     }
     else if (tabName === 'attendances') {
-      if (!window.attendances || window.attendances.length === 0) loadAttendance();
-      if (!window.students || window.students.length === 0) loadStudents();
-      if (!window.courses || window.courses.length === 0) loadCourses();
+      // Only load if data is missing or stale
+      if (needsDataRefresh('attendances') && typeof loadAttendance === 'function') {
+        loadAttendance(false); // Use cache if available
+      }
       if (typeof loadAttendancesTab === 'function') {
         loadAttendancesTab();
       }

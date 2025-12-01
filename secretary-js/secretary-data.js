@@ -6,7 +6,7 @@
 
 // === Students Data ===
 let studentsLoading = false;
-let realtimeSyncEnabled = true; // Flag to disable real-time sync temporarily
+// realtimeSyncEnabled is now managed globally via window.realtimeSyncEnabled
 
 async function loadStudents(forceRefresh = false) {
   try {
@@ -112,7 +112,7 @@ function renderStudentsTable(data, container) {
   if (!data || data.length === 0) {
     html += '<div style="text-align: center; padding: 60px 20px;"><p style="color: #999; font-size: 1.1em;">📚 لا توجد بيانات طلاب</p></div>';
   } else {
-    html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px;">`;
+    html += `<div class="students-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px;">`;
     
     data.forEach(student => {
       const subscriptions = (window.subscriptions || []).filter(s => s.student_id === student.id);
@@ -396,8 +396,8 @@ function renderCoursesTable(data, container) {
 
         <!-- Actions -->
         <div style="padding: 12px 15px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; gap: 8px;">
-          <button class="action-btn" onclick="editCourse('${course.id}')" style="flex: 1; background: #2196f3; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500;">
-            ✏️ تعديل
+          <button class="action-btn" onclick="openCourseManagement('${course.id}')" style="flex: 1; background: #667eea; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500;">
+            📚 إدارة
           </button>
           <button class="action-btn" onclick="deleteCourse('${course.id}')" style="flex: 1; background: #f44336; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500;">
             🗑️ حذف
@@ -426,95 +426,39 @@ function updateCoursesStats(data) {
 // === Subscriptions Data ===
 let subscriptionsLoading = false;
 
-async function loadSubscriptions(forceRefresh = false) {
-  try {
-    if (subscriptionsLoading) return;
-    
-    // Check cache
-    const cache = window.dataCache.subscriptions;
-    const now = Date.now();
-    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
-      window.subscriptions = cache.data;
-      const container = document.getElementById('subscriptionsContainer');
-      if (container && typeof renderSubscriptionsTable === 'function') {
-        renderSubscriptionsTable(cache.data, container);
-      }
+function renderSubscriptionsTable(data, container) {
+  // reuse the centralized rendering (keeps layouts consistent)
+  if (typeof window.renderSubscriptionsTable === 'function' && window.renderSubscriptionsTable !== renderSubscriptionsTable) {
+    // if another module defined it (e.g., subscriptions-tab-functions.js), prefer that implementation
+    try {
+      window.renderSubscriptionsTable(data, container);
       return;
+    } catch (e) {
+      // fallback to local simple render
+      console.warn('Fallback renderSubscriptionsTable used due to error:', e);
     }
-    
-    if (subscriptionsLoading) return;
-    subscriptionsLoading = true;
-    
-    if (!window.currentAcademyId) {
-      console.error('❌ Academy ID not set');
-      subscriptionsLoading = false;
-      return;
-    }
-    
-    const container = document.getElementById('subscriptionsContainer');
-    if (container) {
-      container.innerHTML = `
-        <div class="loading">
-          <div class="loading-spinner"></div>
-          <p>جارٍ تحميل بيانات الاشتراكات...</p>
-        </div>
-      `;
-    }
-
-    const { data: subscriptionsData, error } = await window.supabaseClient
-      .from('subscriptions')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    // Get related data from students and courses
-    const { data: studentsData } = await window.supabaseClient
-      .from('students')
-      .select('id, full_name')
-      .eq('academy_id', window.currentAcademyId);
-
-    const { data: coursesData } = await window.supabaseClient
-      .from('courses')
-      .select('id, name, price')
-      .eq('academy_id', window.currentAcademyId);
-
-    // Manual join - استخدام بيانات الطلاب والكورسات الصحيحة
-    const data = subscriptionsData.map(sub => {
-      const student = studentsData?.find(s => s.id === sub.student_id);
-      const course = coursesData?.find(c => c.id === sub.course_id);
-      return {
-        ...sub,
-        student_name: student?.full_name || '-',
-        course_name: course?.name || '-',
-        course_price: course?.price || 0,
-        start_date: sub.subscribed_at,
-        end_date: sub.subscribed_at
-      };
-    });
-
-    window.subscriptions = data || [];
-    
-    // Update cache
-    window.dataCache.subscriptions = {
-      data: data || [],
-      timestamp: Date.now(),
-      loading: false
-    };
-    
-    if (container) {
-      renderSubscriptionsTable(data, container);
-    }
-    console.log('✅ Subscriptions loaded:', data.length);
-  } catch (error) {
-    console.error('❌ Error loading subscriptions:', error);
-    showStatus('خطأ في تحميل الاشتراكات', 'error');
-  } finally {
-    subscriptionsLoading = false;
   }
-}
 
+  // simple fallback when the above didn't run
+  let html = '<div class="table-container">';
+  if (!data || data.length === 0) {
+    html += '<p class="no-data">لا توجد اشتراكات</p>';
+  } else {
+    html += '<div class="summary-cards">';
+    const activeCount = data.filter(s => s.status === 'active').length;
+    const inactiveCount = data.length - activeCount;
+    html += `<div class="summary-card">إجمالي: <div class="value">${data.length}</div></div>`;
+    html += `<div class="summary-card">نشط: <div class="value">${activeCount}</div></div>`;
+    html += `<div class="summary-card">منتهي: <div class="value">${inactiveCount}</div></div>`;
+    html += '</div>';
+
+    html += '<div class="table-responsive"><table><thead><tr><th>الطالب</th><th>الكورس</th><th>السعر</th><th>التاريخ</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>';
+    html += data.map(sub => `<tr><td data-label="الطالب">${escapeHtml(sub.student_name||'-')}</td><td data-label="الكورس">${escapeHtml(sub.course_name||'-')}</td><td data-label="السعر">${formatCurrency(sub.course_price||0)}</td><td data-label="التاريخ">${formatDate(sub.subscribed_at)}</td><td data-label="الحالة"><span class="status-badge ${sub.status==='active'?'active':'inactive'}">${sub.status==='active'?'✓ نشط':'✗ منتهي'}</span></td><td data-label="الإجراءات"><button class="action-btn view-btn" onclick="showSubscriptionDetails('${sub.id}')">📋</button></td></tr>`).join('');
+    html += '</tbody></table></div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
 function renderSubscriptionsTable(data, container) {
   let html = `
     <div class="table-container">
@@ -958,40 +902,30 @@ function renderAttendanceTable(data, container) {
   }
 
   const html = `
-    <div style="overflow-x: auto;">
-      <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
-        <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+    <div class="responsive-table-wrapper">
+      <table class="attendance-table">
+        <thead>
           <tr>
-            <th style="padding: 15px; text-align: right; border: none; font-weight: 600;">👤 الطالب</th>
-            <th style="padding: 15px; text-align: right; border: none; font-weight: 600;">📚 الكورس</th>
-            <th style="padding: 15px; text-align: right; border: none; font-weight: 600;">📅 التاريخ</th>
-            <th style="padding: 15px; text-align: center; border: none; font-weight: 600;">📊 الحالة</th>
-            <th style="padding: 15px; text-align: right; border: none; font-weight: 600;">📝 ملاحظات</th>
+            <th>👤 الطالب</th>
+            <th>📚 الكورس</th>
+            <th>📅 التاريخ</th>
+            <th>📊 الحالة</th>
+            <th>📝 ملاحظات</th>
           </tr>
         </thead>
         <tbody>
-          ${data.map((att, index) => {
-            const statusConfig = {
-              'present': { label: '✓ حاضر', color: '#10b981', bg: '#e8f5e9' },
-              'absent': { label: '✗ غائب', color: '#ef4444', bg: '#fee2e2' },
-              'late': { label: '⏰ متأخر', color: '#f59e0b', bg: '#fff3cd' }
-            };
-            const config = statusConfig[att.status] || { label: att.status || 'غير محدد', color: '#6b7280', bg: '#f3f4f6' };
-            
-            // التعامل مع أسماء الحقول المختلفة
+          ${data.map((att) => {
+            const status = att.status || 'unknown';
             const attendanceDate = att.date || att.attendance_date || att.att_date || '-';
-            
             return `
-              <tr style="border-bottom: 1px solid #eee; background: ${index % 2 === 0 ? '#ffffff' : '#f9f9f9'}; transition: background 0.2s;">
-                <td style="padding: 12px 15px; text-align: right; color: #333; font-weight: 500;">${escapeHtml(att.student_name || '-')}</td>
-                <td style="padding: 12px 15px; text-align: right; color: #555;">${escapeHtml(att.course_name || '-')}</td>
-                <td style="padding: 12px 15px; text-align: right; color: #666; font-weight: 500;">${formatDate(attendanceDate)}</td>
-                <td style="padding: 12px 15px; text-align: center;">
-                  <span style="background: ${config.bg}; color: ${config.color}; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; display: inline-block;">
-                    ${config.label}
-                  </span>
+              <tr>
+                <td class="td-student" data-label="الطالب">${escapeHtml(att.student_name || '-')}</td>
+                <td class="td-course" data-label="الكورس">${escapeHtml(att.course_name || '-')}</td>
+                <td class="td-date" data-label="التاريخ">${formatDate(attendanceDate)}</td>
+                <td class="td-status" data-label="الحالة">
+                  <span class="status-badge ${status}">${getAttendanceStatusLabel(status)}</span>
                 </td>
-                <td style="padding: 12px 15px; text-align: right; color: #777; font-size: 0.9em;">${att.notes ? escapeHtml(att.notes) : '-'}</td>
+                <td class="td-notes" data-label="ملاحظات">${att.notes ? escapeHtml(att.notes) : '-'}</td>
               </tr>
             `;
           }).join('')}

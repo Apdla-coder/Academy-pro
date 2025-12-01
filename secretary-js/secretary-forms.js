@@ -184,16 +184,22 @@ async function showAddCourseModal() {
   const modal = document.getElementById('courseModal');
   if (!modal) return;
   
+  // Load teachers first
   await loadTeachers();
+  
+  // Wait a bit if teachers are still loading
   if (!window.teachers || window.teachers.length === 0) {
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
     await loadTeachers();
   }
   
+  // Populate dropdown after teachers are loaded
   populateTeacherDropdown();
+  
   modal.style.display = 'flex';
   document.getElementById('courseModalTitle').textContent = 'إضافة كورس جديد';
   document.getElementById('courseForm').reset();
+  document.getElementById('courseId').value = '';
 }
 
 async function editCourse(courseId) {
@@ -270,17 +276,22 @@ async function addCourse(e) {
       return;
     }
 
-    const { data, error } = await window.supabaseClient
+    const { data: courseData, error } = await window.supabaseClient
       .from('courses')
       .insert([{
         name: name,
         description: description,
         price: parseFloat(price),
         academy_id: window.currentAcademyId,
-        teacher_id: teacherId
-      }]);
+        teacher_id: teacherId,
+        start_date: document.getElementById('startDate')?.value || null,
+        end_date: document.getElementById('endDate')?.value || null
+      }])
+      .select();
 
     if (error) throw error;
+
+    // Note: الوحدات والدروس يمكن إضافتها لاحقاً من خلال موديل إدارة الكورس
 
     showStatus('✅ تم إضافة الكورس بنجاح', 'success');
     closeModal('courseModal');
@@ -907,31 +918,14 @@ async function initializeAllDropdowns() {
   await loadStudentsList();
   await loadCoursesList();
   
-  populateSubscriptionDropdowns();
-  populatePaymentDropdowns();
-  populateAttendanceDropdowns();
+  // These functions are handled inline in their respective modals
+  // populateSubscriptionDropdowns();
+  // populatePaymentDropdowns();
+  // populateAttendanceDropdowns();
 }
 
-// Modal opening functions
-function showAddStudentModal() {
-  const modal = document.getElementById('studentModal');
-  if (!modal) return;
-  
-  modal.style.display = 'flex';
-  document.getElementById('studentModalTitle').textContent = 'إضافة طالب جديد';
-  document.getElementById('studentForm').reset();
-  document.getElementById('studentForm').onsubmit = addStudent;
-}
-
-function showAddCourseModal() {
-  const modal = document.getElementById('courseModal');
-  if (!modal) return;
-  
-  modal.style.display = 'flex';
-  document.getElementById('courseModalTitle').textContent = 'إضافة كورس جديد';
-  document.getElementById('courseForm').reset();
-  document.getElementById('courseForm').onsubmit = addCourse;
-}
+// Note: Modal opening functions are defined above (showAddStudentModal, showAddCourseModal, etc.)
+// These are the main implementations used throughout the app
 
 // Ensure all event listeners are attached (only once per form)
 function setupFormEventListeners() {

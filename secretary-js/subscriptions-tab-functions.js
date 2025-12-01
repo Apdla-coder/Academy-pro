@@ -67,31 +67,32 @@ async function loadSubscriptionsTab() {
 
 function renderSubscriptionsTable(data, container) {
   console.log('🎨 renderSubscriptionsTable called with', data?.length, 'records');
-  
+
   if (!container) {
     console.error('❌ Container not found in renderSubscriptionsTable');
     return;
   }
 
+  // build header actions and search area using classes so CSS can handle layout
   let html = `
     <div class="table-container">
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="btn btn-primary" onclick="showAddSubscriptionModal()" style="flex: 1; min-width: 150px;">
+      <div class="table-actions-row">
+        <button class="btn btn-primary" onclick="showAddSubscriptionModal()">
           <i class="fas fa-plus"></i> إضافة اشتراك جديد
         </button>
-        <button class="btn btn-success" onclick="exportSubscriptionsExcel()" style="flex: 1; min-width: 150px;">
+        <button class="btn btn-success" onclick="exportSubscriptionsExcel()">
           <i class="fas fa-file-excel"></i> تحميل البيانات
         </button>
-        <button class="btn btn-info" onclick="printSubscriptions()" style="flex: 1; min-width: 150px;">
+        <button class="btn btn-info" onclick="printSubscriptions()">
           <i class="fas fa-print"></i> طباعة
         </button>
       </div>
 
-      <div class="search-filter" style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <div class="search-box" style="flex: 1;">
-          <input type="text" id="subscriptionSearch" placeholder="ابحث عن طالب أو كورس..." onkeyup="filterSubscriptions()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+      <div class="search-filter">
+        <div class="search-box">
+          <input type="text" id="subscriptionSearch" placeholder="ابحث عن طالب أو كورس..." onkeyup="filterSubscriptions()">
         </div>
-        <select id="subscriptionStatusFilter" onchange="filterSubscriptions()" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 150px;">
+        <select id="subscriptionStatusFilter" onchange="filterSubscriptions()">
           <option value="all">جميع الحالات</option>
           <option value="active">نشط فقط</option>
           <option value="inactive">منتهي فقط</option>
@@ -114,59 +115,53 @@ function renderSubscriptionsTable(data, container) {
     const inactiveCount = data.length - activeCount;
 
     html += `
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-        <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; text-align: center;">
-          <p style="margin: 0; color: #1976d2; font-size: 0.85em;">إجمالي الاشتراكات</p>
-          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: #1565c0;">${data.length}</p>
+      <div class="summary-cards">
+        <div class="summary-card" style="background: #e3f2fd;">
+          <p>إجمالي الاشتراكات</p>
+          <div class="value">${data.length}</div>
         </div>
-        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; text-align: center;">
-          <p style="margin: 0; color: #388e3c; font-size: 0.85em;">✓ الاشتراكات النشطة</p>
-          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: #2e7d32;">${activeCount}</p>
+        <div class="summary-card" style="background: #e8f5e9;">
+          <p>✓ الاشتراكات النشطة</p>
+          <div class="value">${activeCount}</div>
         </div>
-        <div style="background: #ffebee; padding: 12px; border-radius: 6px; text-align: center;">
-          <p style="margin: 0; color: #c62828; font-size: 0.85em;">✗ المنتهية</p>
-          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: #b71c1c;">${inactiveCount}</p>
+        <div class="summary-card" style="background: #ffebee;">
+          <p>✗ المنتهية</p>
+          <div class="value">${inactiveCount}</div>
         </div>
       </div>
 
-      <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden;">
-        <thead>
-          <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-            <th style="padding: 12px; text-align: right; font-weight: 600;">👤 الطالب</th>
-            <th style="padding: 12px; text-align: right; font-weight: 600;">📖 الكورس</th>
-            <th style="padding: 12px; text-align: right; font-weight: 600;">💰 السعر</th>
-            <th style="padding: 12px; text-align: right; font-weight: 600;">📅 التاريخ</th>
-            <th style="padding: 12px; text-align: right; font-weight: 600;">الحالة</th>
-            <th style="padding: 12px; text-align: right; font-weight: 600;">الإجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${data.map((sub, idx) => `
-            <tr style="border-bottom: 1px solid #eee; ${idx % 2 === 0 ? 'background: #f9f9f9;' : 'background: white;'} transition: background 0.2s;">
-              <td style="padding: 12px; text-align: right; font-weight: 500;">${escapeHtml(sub.student_name || '-')}</td>
-              <td style="padding: 12px; text-align: right;">${escapeHtml(sub.course_name || '-')}</td>
-              <td style="padding: 12px; text-align: right; font-weight: 600; color: #2e7d32;">${formatCurrency(sub.course_price || 0)}</td>
-              <td style="padding: 12px; text-align: right; font-size: 0.9em;">${formatDate(sub.subscribed_at)}</td>
-              <td style="padding: 12px; text-align: right;">
-                <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; ${
-                  sub.status === 'active' 
-                    ? 'background: #c8e6c9; color: #1b5e20;' 
-                    : 'background: #ffcdd2; color: #b71c1c;'
-                }">
-                  ${sub.status === 'active' ? '✓ نشط' : '✗ منتهي'}
-                </span>
-              </td>
-              <td style="padding: 12px; text-align: right;">
-                <button class="action-btn" onclick="showSubscriptionDetails('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">📋</button>
-                <button class="action-btn" onclick="editSubscription('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">✏️</button>
-                <button class="action-btn" onclick="deleteSubscription('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">🗑️</button>
-              </td>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>👤 الطالب</th>
+              <th>📖 الكورس</th>
+              <th>💰 السعر</th>
+              <th>📅 التاريخ</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>`;
+          </thead>
+          <tbody>
+            ${data.map((sub, idx) => `
+              <tr>
+                <td data-label="الطالب">${escapeHtml(sub.student_name || '-')}</td>
+                <td data-label="الكورس">${escapeHtml(sub.course_name || '-')}</td>
+                <td data-label="السعر">${formatCurrency(sub.course_price || 0)}</td>
+                <td data-label="التاريخ">${formatDate(sub.subscribed_at)}</td>
+                <td data-label="الحالة"><span class="status-badge ${sub.status === 'active' ? 'active' : 'inactive'}">${sub.status === 'active' ? '✓ نشط' : '✗ منتهي'}</span></td>
+                <td data-label="الإجراءات">
+                  <button class="action-btn view-btn" onclick="showSubscriptionDetails('${sub.id}')">📋</button>
+                  <button class="action-btn edit-btn" onclick="editSubscription('${sub.id}')">✏️</button>
+                  <button class="action-btn delete-btn" onclick="deleteSubscription('${sub.id}')">🗑️</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
   }
-  
+
   html += '</div>';
   container.innerHTML = html;
   console.log('✅ Subscriptions table rendered successfully');

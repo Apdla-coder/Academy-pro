@@ -593,36 +593,68 @@ function calculateRemaining() {
 }
 
 // === Real-time Data Sync ===
+let realtimeChannels = [];
+
 function setupRealtimeSync() {
   try {
-    if (!window.supabase) {
-      console.warn('⚠️ Supabase not initialized for realtime sync');
+    // Don't setup if realtime sync is disabled
+    if (window.realtimeSyncEnabled === false) {
+      console.log('⏸️ Realtime sync is disabled');
+      return;
+    }
+    
+    if (!window.supabaseClient) {
+      console.warn('⚠️ Supabase client not initialized for realtime sync');
       return;
     }
 
-    // Subscribe to subscriptions changes
-    window.supabase
-      .channel('public:subscriptions')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'subscriptions' },
-        (payload) => {
-          console.log('📡 Subscription data changed:', payload);
-          if (typeof loadSubscriptions === 'function') loadSubscriptions();
-        }
-      )
-      .subscribe();
+    // Clean up existing channels
+    realtimeChannels.forEach(channel => {
+      try {
+        window.supabaseClient.removeChannel(channel);
+      } catch (e) {
+        console.warn('⚠️ Error removing channel:', e);
+      }
+    });
+    realtimeChannels = [];
 
-    // Subscribe to payments changes
-    window.supabase
-      .channel('public:payments')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'payments' },
-        (payload) => {
-          console.log('📡 Payment data changed:', payload);
-          if (typeof loadPayments === 'function') loadPayments();
-        }
-      )
-      .subscribe();
+    // Subscribe to subscriptions changes (only if enabled)
+    if (window.realtimeSyncEnabled !== false) {
+      const subChannel = window.supabaseClient
+        .channel('public:subscriptions')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'subscriptions' },
+          (payload) => {
+            if (window.realtimeSyncEnabled === false) return;
+            console.log('📡 Subscription data changed:', payload);
+            // Use cache if available, don't force refresh
+            if (typeof loadSubscriptions === 'function') {
+              loadSubscriptions(false);
+            }
+          }
+        )
+        .subscribe();
+      realtimeChannels.push(subChannel);
+    }
+
+    // Subscribe to payments changes (only if enabled)
+    if (window.realtimeSyncEnabled !== false) {
+      const payChannel = window.supabaseClient
+        .channel('public:payments')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'payments' },
+          (payload) => {
+            if (window.realtimeSyncEnabled === false) return;
+            console.log('📡 Payment data changed:', payload);
+            // Use cache if available, don't force refresh
+            if (typeof loadPayments === 'function') {
+              loadPayments(false);
+            }
+          }
+        )
+        .subscribe();
+      realtimeChannels.push(payChannel);
+    }
 
     console.log('✅ Real-time sync initialized');
   } catch (error) {
