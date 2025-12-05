@@ -297,7 +297,12 @@ async function addCourse(e) {
     closeModal('courseModal');
     window.realtimeSyncEnabled = false;
     clearDataCache('courses');
-    await loadCourses(true); // force refresh
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('courses');
+    } else {
+      await loadCourses(true); // fallback if tabRefreshManager not available
+    }
     setTimeout(() => { 
       window.realtimeSyncEnabled = true;
     }, 500);
@@ -335,7 +340,12 @@ async function updateCourse(courseId) {
     showStatus('✅ تم تحديث الكورس', 'success');
     closeModal('courseModal');
     clearDataCache('courses');
-    await loadCourses(true); // force refresh
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('courses');
+    } else {
+      await loadCourses(true); // fallback if tabRefreshManager not available
+    }
   } catch (error) {
     console.error('❌ Error updating course:', error);
     showStatus('خطأ في تحديث الكورس', 'error');
@@ -808,7 +818,12 @@ async function addPayment(e) {
     window.realtimeSyncEnabled = false;
     
     clearDataCache('payments');
-    await loadPayments(true); // force refresh
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('payments');
+    } else {
+      await loadPayments(true); // fallback if tabRefreshManager not available
+    }
     
     // Re-enable realtime sync after a short delay
     setTimeout(() => {

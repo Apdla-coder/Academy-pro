@@ -99,6 +99,10 @@ function populateCourseEdit(course) {
   // Populate teachers dropdown
   const teacherSelect = document.getElementById('editTeacher');
   if (teacherSelect) {
+    console.log('🔍 Populating teacher dropdown');
+    console.log('📝 window.teachers available:', window.teachers?.length || 0);
+    console.log('📝 window.teachers data:', window.teachers);
+    
     teacherSelect.innerHTML = '<option value="">لم يتم تعيين معلم بعد</option>';
     if (window.teachers && window.teachers.length > 0) {
       window.teachers.forEach(teacher => {
@@ -110,6 +114,9 @@ function populateCourseEdit(course) {
         }
         teacherSelect.appendChild(option);
       });
+      console.log('✅ Teacher dropdown populated with', window.teachers.length, 'teachers');
+    } else {
+      console.warn('⚠️ No teachers available to populate dropdown');
     }
   }
 }

@@ -804,3 +804,68 @@ async function loadAttendance(forceRefresh = false) {
     console.error('❌ Error loading attendance:', error);
   }
 }
+
+async function loadTeachers(forceRefresh = false) {
+  try {
+    console.log('🔄 loadTeachers called - forceRefresh:', forceRefresh);
+
+    const cache = window.dataCache.teachers = window.dataCache.teachers || {};
+    const now = Date.now();
+    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+      window.teachers = cache.data;
+      console.log('✅ Teachers from cache:', window.teachers.length);
+      return;
+    }
+
+    console.log('🔄 Fetching teachers...');
+
+    // Get all profiles and log them
+    const { data: allProfiles, error: allError } = await window.supabaseClient
+      .from('profiles')
+      .select('*')
+      .limit(100);
+
+    console.log('📊 ALL PROFILES IN DATABASE:', {
+      count: allProfiles?.length || 0,
+      error: allError,
+      data: allProfiles
+    });
+
+    if (allError) {
+      console.error('❌ Error fetching profiles:', allError);
+      window.teachers = [];
+    } else {
+      // Filter profiles to get teachers
+      // Teachers should have specialty or role='teacher'
+      const teachers = (allProfiles || []).filter(p => {
+        const hasSpecialty = p.specialty && p.specialty !== 'غير محدد' && p.specialty !== null;
+        const isTeacherRole = p.role === 'teacher' || p.role === 'instructor';
+        return hasSpecialty || isTeacherRole || p.full_name; // At minimum, has a name
+      });
+
+      console.log('✅ FILTERED TEACHERS:', {
+        total: teachers.length,
+        teachers: teachers.map(t => ({
+          id: t.id,
+          name: t.full_name,
+          email: t.email,
+          specialty: t.specialty,
+          role: t.role
+        }))
+      });
+
+      window.teachers = teachers;
+    }
+
+    window.dataCache.teachers = {
+      data: window.teachers,
+      timestamp: Date.now(),
+      loading: false
+    };
+
+    console.log('✅ loadTeachers completed. Teachers count:', window.teachers.length);
+  } catch (error) {
+    console.error('❌ Error in loadTeachers:', error);
+    window.teachers = [];
+  }
+}

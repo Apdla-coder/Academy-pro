@@ -1560,6 +1560,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const role = document.getElementById('addRole').value;
 
             try {
+                // التحقق من أن البريد الإلكتروني لم يتم استخدامه بالفعل في profiles
+                status.textContent = 'جاري التحقق من البريد الإلكتروني...';
+                status.className = 'status-message info';
+
+                const { data: existingProfile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (existingProfile) {
+                    status.textContent = '❌ هذا البريد الإلكتروني مستخدم بالفعل في النظام';
+                    status.className = 'status-message error';
+                    inputs.forEach(i => i.disabled = false);
+                    return;
+                }
+
                 // 1. تسجيل المستخدم في Auth
                 status.textContent = 'جاري إنشاء الحساب...';
                 status.className = 'status-message info';
@@ -1575,8 +1592,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (authError) {
                     if (authError.message.includes('already registered')) {
-                        status.textContent = 'هذا البريد الإلكتروني مسجل مسبقاً';
+                        status.textContent = '❌ هذا البريد الإلكتروني مسجل مسبقاً في الخادم';
                         status.className = 'status-message error';
+                        inputs.forEach(i => i.disabled = false);
                         return;
                     }
                     throw authError;
@@ -1584,87 +1602,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!authData.user) throw new Error('فشل إنشاء المستخدم');
 
-                // 2. نحاول نضيف في profiles
-                const { error: insertError } = await supabase
+                // الحصول على academy_id من localStorage
+                const currentAcademyId = localStorage.getItem('current_academy_id');
+                if (!currentAcademyId) {
+                    throw new Error('لم يتم تعيين الأكاديمية الحالية');
+                }
+
+                // 2. إدراج في profiles باستخدام upsert من البداية (لتجنب التعارضات)
+                status.textContent = 'جاري حفظ بيانات المستخدم...';
+                status.className = 'status-message info';
+
+                const { error: profileError } = await supabase
                     .from('profiles')
-                    .insert({
+                    .upsert({
                         id: authData.user.id,
                         full_name: fullName,
                         email: email,
                         phone: phone || null,
-                        specialty: specialty || null
-                    });
+                        specialty: specialty || null,
+                        role: role,
+                        academy_id: currentAcademyId,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' });
 
-                // لو حصل تعارض (الـ id موجود بالفعل)
-                if (insertError && insertError.code === '23505') {
-                    // نستخدم upsert بدل insert (يحدّث لو موجود)
-                    const { error: upsertError } = await supabase
-                        .from('profiles')
-                        .upsert({
-                            id: authData.user.id,
-                            full_name: fullName,
-                            email: email,
-                            phone: phone || null,
-                            specialty: specialty || null,
-                            updated_at: new Date()
-                        }, { onConflict: 'id' });
-
-                    if (upsertError) throw upsertError;
-
-                    status.textContent = 'تم تحديث بيانات المستخدم الموجود مسبقاً بنجاح!';
-                    status.className = 'status-message success';
-                } 
-                // لو نجح الـ insert من أول مرة
-                else if (insertError) {
-                    // لو خطأ تاني، نحذف المستخدم من Auth
-                    await supabase.auth.admin.deleteUser(authData.user.id).catch(() => {});
-                    throw insertError;
-                } 
-                else {
-                    status.textContent = 'تم إنشاء الحساب بنجاح! تم إرسال رابط التفعيل';
-                    status.className = 'status-message success';
-                }
-
-                // 3. ربط المستخدم تلقائياً بالأكاديمية الحالية
-                const currentAcademyId = localStorage.getItem('current_academy_id');
-                if (currentAcademyId) {
-                    const { error: memberError } = await supabase
-                        .from('academy_members')
-                        .insert({
-                            user_id: authData.user.id,
-                            academy_id: currentAcademyId,
-                            role: role,
-                            joined_at: new Date()
-                        });
-
-                    if (memberError) {
-                        console.error('خطأ في ربط المستخدم بالأكاديمية:', memberError);
-                        // نحاول upsert لو كان موجود بالفعل
-                        const { error: upsertMemberError } = await supabase
-                            .from('academy_members')
-                            .upsert({
-                                user_id: authData.user.id,
-                                academy_id: currentAcademyId,
-                                role: role,
-                                joined_at: new Date()
-                            }, { onConflict: ['user_id', 'academy_id'] });
-                        
-                        if (upsertMemberError) {
-                            console.error('فشل upsert academy_members:', upsertMemberError);
-                        }
+                if (profileError) {
+                    console.error('❌ خطأ في حفظ بيانات المستخدم:', profileError);
+                    // محاولة حذف المستخدم من Auth إذا فشل الحفظ
+                    try {
+                        await supabase.auth.admin.deleteUser(authData.user.id);
+                    } catch (deleteError) {
+                        console.warn('⚠️ لم يتمكن من حذف المستخدم من Auth:', deleteError);
                     }
+                    throw profileError;
                 }
 
-                // تحديث القائمة
+                status.textContent = '✅ تم إنشاء الحساب بنجاح! تم إرسال رابط التفعيل';
+                status.className = 'status-message success';
+
+                // 3. ربط المستخدم بالأكاديمية في academy_members
+                status.textContent = 'جاري ربط المستخدم بالأكاديمية...';
+                status.className = 'status-message info';
+
+                const { error: memberError } = await supabase
+                    .from('academy_members')
+                    .upsert({
+                        user_id: authData.user.id,
+                        academy_id: currentAcademyId,
+                        role: role,
+                        joined_at: new Date().toISOString()
+                    }, { onConflict: ['academy_id', 'user_id'] });
+
+                if (memberError) {
+                    console.warn('⚠️ تحذير في ربط المستخدم بالأكاديمية:', memberError);
+                    // لا نرمي خطأ لأن المستخدم تم إنشاؤه بالفعل
+                }
+
+                // 4. تحديث القائمة
+                status.textContent = '✅ تم إضافة المستخدم بنجاح!';
+                status.className = 'status-message success';
+
+                // مسح النموذج
+                form.reset();
+                document.getElementById('addFullName').value = '';
+                document.getElementById('addEmail').value = '';
+                document.getElementById('addPassword').value = '';
+                document.getElementById('addPhone').value = '';
+                document.getElementById('addSpecialty').value = '';
+                document.getElementById('addRole').value = 'student';
+
+                // تحديث البيانات والعرض
                 await loadUsers();
                 renderUsersTable();
                 updateStats();
 
+                // إغلاق النافذة بعد ثواني
                 setTimeout(closeAddUserModal, 2500);
 
             } catch (error) {
-                console.error('Error adding user:', error);
-                status.textContent = `حدث خطأ: ${error.message}`;
+                console.error('❌ خطأ:', error);
+                status.textContent = `❌ حدث خطأ: ${error.message}`;
                 status.className = 'status-message error';
             } finally {
                 inputs.forEach(i => i.disabled = false);
