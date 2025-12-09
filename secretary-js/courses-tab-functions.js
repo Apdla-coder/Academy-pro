@@ -5,7 +5,8 @@
 async function loadCoursesTab() {
   try {
     console.log('📚 Loading courses tab...');
-    await loadCourses();
+    // Force refresh when opening tab
+    await loadCourses(true);
     
     // Render courses and update stats
     const container = document.getElementById('coursesContainer');

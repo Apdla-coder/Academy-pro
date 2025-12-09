@@ -5,6 +5,9 @@
 async function loadPaymentsTab() {
   try {
     console.log('💰 Loading payments tab...');
+    // Force refresh when opening tab
+    await loadPayments(true);
+    
     // تأكد من وجود البيانات
     console.log('📊 Data status:', {
       payments: (window.payments || []).length,
@@ -14,7 +17,9 @@ async function loadPaymentsTab() {
     });
     
     // استدعِ renderPaymentsByCourse مباشرة
-    renderPaymentsByCourse();
+    if (typeof renderPaymentsByCourse === 'function') {
+      renderPaymentsByCourse();
+    }
   } catch (error) {
     console.error('❌ Error loading payments tab:', error);
   }
@@ -82,14 +87,14 @@ function renderPaymentsByCourse() {
 
   let html = `
     <div class="payments-container">
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="btn btn-primary" onclick="showAddPaymentModal()">
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="showAddPaymentModal()" style="font-size: 1em; font-weight: 600; padding: 12px 20px;">
           <i class="fas fa-plus"></i> إضافة دفعة
         </button>
-        <button class="btn btn-success" onclick="exportAllPaymentsExcel()">
+        <button class="btn btn-success" onclick="exportAllPaymentsExcel()" style="font-size: 1em; font-weight: 600; padding: 12px 20px;">
           <i class="fas fa-file-excel"></i> تحميل Excel
         </button>
-        <button class="btn btn-info" onclick="printAllPayments()">
+        <button class="btn btn-info" onclick="printAllPayments()" style="font-size: 1em; font-weight: 600; padding: 12px 20px;">
           <i class="fas fa-print"></i> طباعة
         </button>
       </div>
@@ -109,54 +114,54 @@ function renderPaymentsByCourse() {
         <div class="course-header" onclick="toggleCoursePayments('${courseId}')">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <h3 style="margin: 0; font-size: 1.3em;">📚 ${escapeHtml(course.name)}</h3>
-              <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.9em;">سعر الكورس: ${formatCurrency(course.price || 0)}</p>
+              <h3 style="margin: 0; font-size: 1.5em; font-weight: 700; color: #F1F5F9;">📚 ${escapeHtml(course.name)}</h3>
+              <p style="margin: 8px 0 0 0; font-size: 1em; font-weight: 500; color: #CBD5E1;">سعر الكورس: ${formatCurrency(course.price || 0)}</p>
             </div>
             <div style="text-align: right;">
-              <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">عدد الطلاب</p>
-              <p style="margin: 5px 0 0 0; font-size: 1.8em; font-weight: 700;">${stats.totalStudents}</p>
+              <p style="margin: 0; font-size: 1em; font-weight: 500; color: #CBD5E1;">عدد الطلاب</p>
+              <p style="margin: 6px 0 0 0; font-size: 2em; font-weight: 700; color: #F1F5F9;">${stats.totalStudents}</p>
             </div>
           </div>
         </div>
 
         <!-- Course Stats -->
         <div class="summary-cards">
-          <div class="summary-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white;">
-            <p>💵 الإجمالي المتوقع</p>
-            <div class="value">${formatCurrency(stats.totalExpected)}</div>
+          <div class="summary-card" style="background: #3B82F6; color: white; border-radius: var(--radius-md);">
+            <p style="margin: 0 0 10px 0; font-size: 1em; font-weight: 600; opacity: 0.95;">💵 الإجمالي المتوقع</p>
+            <div class="value" style="font-size: 1.6em; font-weight: 700;">${formatCurrency(stats.totalExpected)}</div>
           </div>
-          <div class="summary-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
-            <p>✓ المدفوع</p>
-            <div class="value">${formatCurrency(stats.totalPaidAmount)}</div>
+          <div class="summary-card" style="background: #10B981; color: white; border-radius: var(--radius-md);">
+            <p style="margin: 0 0 10px 0; font-size: 1em; font-weight: 600; opacity: 0.95;">✓ المدفوع</p>
+            <div class="value" style="font-size: 1.6em; font-weight: 700;">${formatCurrency(stats.totalPaidAmount)}</div>
           </div>
-          <div class="summary-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
-            <p>⏳ المتبقي</p>
-            <div class="value">${formatCurrency(stats.totalRemaining)}</div>
+          <div class="summary-card" style="background: #F59E0B; color: white; border-radius: var(--radius-md);">
+            <p style="margin: 0 0 10px 0; font-size: 1em; font-weight: 600; opacity: 0.95;">⏳ المتبقي</p>
+            <div class="value" style="font-size: 1.6em; font-weight: 700;">${formatCurrency(stats.totalRemaining)}</div>
           </div>
-          <div class="summary-card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white;">
-            <p>📊 نسبة التحصيل</p>
-            <div class="value">${stats.totalExpected > 0 ? ((stats.totalPaidAmount / stats.totalExpected) * 100).toFixed(1) : 0}%</div>
+          <div class="summary-card" style="background: #8B5CF6; color: white; border-radius: var(--radius-md);">
+            <p style="margin: 0 0 10px 0; font-size: 1em; font-weight: 600; opacity: 0.95;">📊 نسبة التحصيل</p>
+            <div class="value" style="font-size: 1.6em; font-weight: 700;">${stats.totalExpected > 0 ? ((stats.totalPaidAmount / stats.totalExpected) * 100).toFixed(1) : 0}%</div>
           </div>
         </div>
 
         <!-- Students Payments Table -->
         <div class="${collapsedClass}" style="overflow: hidden;">
           <div class="table-responsive">
-            <table>
+            <table style="border-collapse: collapse; background: var(--bg-card);">
               <thead>
-                <tr>
-                  <th>👤 الطالب</th>
-                  <th>💵 سعر الكورس</th>
-                  <th>✓ المدفوع</th>
-                  <th>⏳ المتبقي</th>
-                  <th>📊 الحالة</th>
-                  <th>الإجراءات</th>
+                <tr style="background: #3B82F6;">
+                  <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; text-align: right; border: none;">👤 الطالب</th>
+                  <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; text-align: right; border: none;">💵 سعر الكورس</th>
+                  <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; text-align: right; border: none;">✓ المدفوع</th>
+                  <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; text-align: right; border: none;">⏳ المتبقي</th>
+                  <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; text-align: right; border: none;">📊 الحالة</th>
+                  <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; text-align: right; border: none;">الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 ${students.length === 0 ? `
                   <tr>
-                    <td colspan="6" style="padding: 20px; text-align: center; color: #999;">لا يوجد طلاب مسجلين في هذا الكورس</td>
+                    <td colspan="6" style="padding: 30px; text-align: center; color: #CBD5E1; font-size: 1.05em; background: var(--bg-card);">لا يوجد طلاب مسجلين في هذا الكورس</td>
                   </tr>
                 ` : students.map(student => {
                   const paidStatus = student.remaining <= 0 ? 'completed' : student.totalPaid > 0 ? 'partial' : 'pending';
@@ -164,15 +169,15 @@ function renderPaymentsByCourse() {
                   const statusClass = paidStatus === 'completed' ? 'active' : paidStatus === 'partial' ? 'partial' : 'inactive';
 
                   return `
-                    <tr>
-                      <td data-label="الطالب">${escapeHtml(student.full_name || '-')}</td>
-                      <td data-label="سعر الكورس">${formatCurrency(student.coursePrice)}</td>
-                      <td data-label="المدفوع">${formatCurrency(student.totalPaid)}</td>
-                      <td data-label="المتبقي">${formatCurrency(student.remaining)}</td>
-                      <td data-label="الحالة"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                      <td data-label="الإجراءات">
-                        <button class="action-btn view-btn" onclick="showStudentPaymentDetails('${student.id}', '${courseId}')">👁️</button>
-                        <button class="action-btn edit-btn" onclick="showAddPaymentModalForStudent('${student.id}', '${courseId}')">➕</button>
+                    <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.1); background: var(--bg-card);">
+                      <td data-label="الطالب" style="padding: 14px 16px; font-size: 1em; font-weight: 500; color: #F1F5F9;">${escapeHtml(student.full_name || '-')}</td>
+                      <td data-label="سعر الكورس" style="padding: 14px 16px; font-size: 1em; font-weight: 500; color: #CBD5E1;">${formatCurrency(student.coursePrice)}</td>
+                      <td data-label="المدفوع" style="padding: 14px 16px; font-size: 1em; font-weight: 600; color: #10B981;">${formatCurrency(student.totalPaid)}</td>
+                      <td data-label="المتبقي" style="padding: 14px 16px; font-size: 1em; font-weight: 600; color: #F59E0B;">${formatCurrency(student.remaining)}</td>
+                      <td data-label="الحالة" style="padding: 14px 16px;"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                      <td data-label="الإجراءات" style="padding: 14px 16px;">
+                        <button class="action-btn view-btn" onclick="showStudentPaymentDetails('${student.id}', '${courseId}')" style="font-size: 1em; padding: 8px 12px; background: #8B5CF6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">👁️</button>
+                        <button class="action-btn edit-btn" onclick="showAddPaymentModalForStudent('${student.id}', '${courseId}')" style="font-size: 1em; padding: 8px 12px; background: #10B981; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 6px; font-weight: 600;">➕</button>
                       </td>
                     </tr>
                   `;
@@ -218,68 +223,72 @@ function showStudentPaymentDetails(studentId, courseId) {
 
   const detailsHTML = `
     <div class="payment-details-modal">
-      <div class="details-header" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 1.5em;">👤 ${escapeHtml(student?.full_name || '-')}</h2>
-        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.9em;">📚 ${escapeHtml(course?.name || '-')}</p>
+      <div class="details-header" style="background: #3B82F6; color: white; padding: 24px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
+        <h2 style="margin: 0; font-size: 1.6em; font-weight: 700; color: white; letter-spacing: 0.3px;">👤 ${escapeHtml(student?.full_name || '-')}</h2>
+        <p style="margin: 10px 0 0 0; font-size: 1.1em; font-weight: 500; color: white; opacity: 0.95;">📚 ${escapeHtml(course?.name || '-')}</p>
       </div>
 
-      <div style="padding: 20px;">
+      <div style="padding: 30px; background: var(--bg-card);">
         <!-- ملخص الدفع -->
-        <div class="details-section">
-          <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px;">💰 ملخص الدفع</h3>
-          <div class="details-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-            <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; text-align: center;">
-              <p style="margin: 0; color: #1976d2; font-size: 0.85em;">سعر الكورس</p>
-              <p style="margin: 8px 0 0 0; font-weight: 700; color: #1565c0; font-size: 1.2em;">${formatCurrency(course?.price || 0)}</p>
+        <div class="details-section" style="margin-bottom: 30px;">
+          <h3 style="color: #3B82F6; border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 12px; margin-bottom: 20px; font-size: 1.3em; font-weight: 700;">💰 ملخص الدفع</h3>
+          <div class="details-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
+            <div style="background: rgba(59, 130, 246, 0.1); padding: 20px; border-radius: 10px; text-align: center; border: 2px solid rgba(59, 130, 246, 0.2);">
+              <p style="margin: 0; color: #3B82F6; font-size: 1em; font-weight: 600; margin-bottom: 10px;">💵 سعر الكورس</p>
+              <p style="margin: 0; font-weight: 700; color: #1E3A8A; font-size: 1.5em;">${formatCurrency(course?.price || 0)}</p>
             </div>
-            <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; text-align: center;">
-              <p style="margin: 0; color: #388e3c; font-size: 0.85em;">المبلغ المدفوع</p>
-              <p style="margin: 8px 0 0 0; font-weight: 700; color: #2e7d32; font-size: 1.2em;">${formatCurrency(totalPaid)}</p>
+            <div style="background: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 10px; text-align: center; border: 2px solid rgba(16, 185, 129, 0.2);">
+              <p style="margin: 0; color: #10B981; font-size: 1em; font-weight: 600; margin-bottom: 10px;">✓ المبلغ المدفوع</p>
+              <p style="margin: 0; font-weight: 700; color: #059669; font-size: 1.5em;">${formatCurrency(totalPaid)}</p>
             </div>
-            <div style="background: ${remaining > 0 ? '#fee2e2' : '#e8f5e9'}; padding: 15px; border-radius: 6px; text-align: center;">
-              <p style="margin: 0; color: ${remaining > 0 ? '#dc2626' : '#388e3c'}; font-size: 0.85em;">المتبقي</p>
-              <p style="margin: 8px 0 0 0; font-weight: 700; color: ${remaining > 0 ? '#b91c1c' : '#2e7d32'}; font-size: 1.2em;">${formatCurrency(remaining)}</p>
+            <div style="background: ${remaining > 0 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; padding: 20px; border-radius: 10px; text-align: center; border: 2px solid ${remaining > 0 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'};">
+              <p style="margin: 0; color: ${remaining > 0 ? '#F59E0B' : '#10B981'}; font-size: 1em; font-weight: 600; margin-bottom: 10px;">⏳ المتبقي</p>
+              <p style="margin: 0; font-weight: 700; color: ${remaining > 0 ? '#D97706' : '#059669'}; font-size: 1.5em;">${formatCurrency(remaining)}</p>
             </div>
           </div>
         </div>
 
         <!-- سجل الدفعات -->
-        <div class="details-section" style="margin-top: 20px;">
-          <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px;">📋 سجل الدفعات</h3>
+        <div class="details-section">
+          <h3 style="color: #3B82F6; border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 12px; margin-bottom: 20px; font-size: 1.3em; font-weight: 700;">📋 سجل الدفعات (${payments.length})</h3>
           ${payments.length === 0 ? `
-            <p style="color: #999; text-align: center; padding: 20px;">لا توجد دفعات مسجلة</p>
+            <div style="text-align: center; padding: 40px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.1);">
+              <p style="color: #CBD5E1; font-size: 1.1em; font-weight: 500; margin: 0;">لا توجد دفعات مسجلة</p>
+            </div>
           ` : `
-            <table style="width: 100%; border-collapse: collapse;">
-              <thead style="background: #f0f0f0;">
-                <tr>
-                  <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">التاريخ</th>
-                  <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">المبلغ</th>
-                  <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">الطريقة</th>
-                  <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${payments.map(p => `
-                  <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px; text-align: right;">${formatDate(p.payment_date)}</td>
-                    <td style="padding: 10px; text-align: right; font-weight: 600; color: #10b981;">${formatCurrency(p.amount)}</td>
-                    <td style="padding: 10px; text-align: right;">${getPaymentMethodLabel(p.payment_method)}</td>
-                    <td style="padding: 10px; text-align: right;">
-                      <span style="background: ${getPaymentStatusColor(p.status) === '#10b981' ? '#d1fae5' : '#fef3c7'}; color: ${getPaymentStatusColor(p.status) === '#10b981' ? '#059669' : '#d97706'}; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600;">
-                        ${p.status === 'paid' ? '✓ مدفوع' : '⏳ قيد الانتظار'}
-                      </span>
-                    </td>
+            <div style="overflow-x: auto; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.1);">
+              <table style="width: 100%; border-collapse: collapse; background: var(--bg-card);">
+                <thead style="background: #3B82F6;">
+                  <tr>
+                    <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">📅 التاريخ</th>
+                    <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">💵 المبلغ</th>
+                    <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">🔄 الطريقة</th>
+                    <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">⚙️ الحالة</th>
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  ${payments.map((p, idx) => `
+                    <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.1); background: ${idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-secondary)'};">
+                      <td style="padding: 14px 18px; text-align: right; font-size: 1em; font-weight: 500; color: #F1F5F9;">${formatDate(p.payment_date)}</td>
+                      <td style="padding: 14px 18px; text-align: right; font-weight: 600; color: #10B981; font-size: 1.1em;">${formatCurrency(p.amount)}</td>
+                      <td style="padding: 14px 18px; text-align: right; font-size: 1em; font-weight: 500; color: #CBD5E1;">${getPaymentMethodLabel(p.payment_method)}</td>
+                      <td style="padding: 14px 18px; text-align: right;">
+                        <span style="background: ${p.status === 'paid' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}; color: ${p.status === 'paid' ? '#10B981' : '#F59E0B'}; padding: 8px 16px; border-radius: 20px; font-size: 0.95em; font-weight: 600; border: 1px solid ${p.status === 'paid' ? '#10B981' : '#F59E0B'};">
+                          ${p.status === 'paid' ? '✓ مدفوع' : '⏳ قيد الانتظار'}
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
           `}
         </div>
       </div>
 
-      <div style="padding: 20px; background: #f5f7fa; border-radius: 0 0 8px 8px; display: flex; gap: 10px; justify-content: flex-end;">
-        <button onclick="closeStudentPaymentDetails()" class="btn btn-secondary" style="padding: 8px 16px;">إغلاق</button>
-        <button onclick="showAddPaymentModalForStudent('${studentId}', '${courseId}')" class="btn btn-primary" style="padding: 8px 16px;">➕ إضافة دفعة</button>
+      <div style="padding: 20px; background: var(--bg-secondary); border-radius: 0 0 8px 8px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+        <button onclick="closeStudentPaymentDetails()" class="btn btn-secondary" style="padding: 14px 28px; font-size: 1.05em; font-weight: 600;">إغلاق</button>
+        <button onclick="showAddPaymentModalForStudent('${studentId}', '${courseId}')" class="btn btn-primary" style="padding: 14px 28px; font-size: 1.05em; font-weight: 600;">➕ إضافة دفعة</button>
       </div>
     </div>
   `;
@@ -294,7 +303,7 @@ function showStudentPaymentDetails(studentId, courseId) {
   }
 
   detailsModal.innerHTML = `
-    <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-lg), 0 0 30px rgba(59, 130, 246, 0.2); border: 1px solid rgba(148, 163, 184, 0.1);">
       ${detailsHTML}
     </div>
   `;
@@ -475,11 +484,11 @@ function printAllPayments() {
 
 function getPaymentStatusColor(status) {
   const colors = {
-    'paid': '#10b981',
-    'pending': '#f59e0b',
-    'failed': '#ef4444'
+    'paid': 'var(--success)',
+    'pending': 'var(--warning)',
+    'failed': 'var(--danger)'
   };
-  return colors[status] || '#6b7280';
+  return colors[status] || 'var(--gray)';
 }
 
 function getPaymentMethodLabel(method) {
@@ -526,15 +535,15 @@ function showPaymentReceiptAfterSave(paymentData) {
     const remaining = Math.max(0, (course.price || 0) - totalPaid);
 
     receiptContent.innerHTML = `
-      <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; border-radius: 8px 8px 0 0;">
-        <h2 style="margin: 0; font-size: 2em;">🧾 إيصال دفع</h2>
-        <p style="margin: 10px 0 0 0; opacity: 0.9;">رقم الإيصال: ${paymentData.id.substring(0, 8).toUpperCase()}</p>
+      <div style="text-align: center; padding: 30px; background: var(--primary); color: white; border-radius: var(--radius-md) var(--radius-md) 0 0;">
+        <h2 style="margin: 0; font-size: 2em; font-weight: 600;">🧾 إيصال دفع</h2>
+        <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 0.95em;">رقم الإيصال: ${paymentData.id.substring(0, 8).toUpperCase()}</p>
       </div>
 
       <div style="padding: 30px; background: white;">
         <!-- معلومات الطالب -->
-        <div style="background: #f0f7ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-right: 4px solid #2196f3;">
-          <h3 style="margin: 0 0 15px 0; color: #2196f3; font-size: 1.2em;">👤 بيانات الطالب</h3>
+        <div style="background: var(--primary-light); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border-right: 4px solid var(--primary);">
+          <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 1.2em; font-weight: 600;">👤 بيانات الطالب</h3>
           <div style="display: grid; gap: 10px;">
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #666;">الاسم:</span>
@@ -556,8 +565,8 @@ function showPaymentReceiptAfterSave(paymentData) {
         </div>
 
         <!-- معلومات الكورس -->
-        <div style="background: #f3e5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-right: 4px solid var(--primary);">
-          <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 1.2em;">📚 بيانات الكورس</h3>
+        <div style="background: var(--primary-light); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border-right: 4px solid var(--primary);">
+          <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 1.2em; font-weight: 600;">📚 بيانات الكورس</h3>
           <div style="display: grid; gap: 10px;">
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #666;">اسم الكورس:</span>
@@ -571,12 +580,12 @@ function showPaymentReceiptAfterSave(paymentData) {
         </div>
 
         <!-- تفاصيل الدفعة -->
-        <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-right: 4px solid #4caf50;">
-          <h3 style="margin: 0 0 15px 0; color: #4caf50; font-size: 1.2em;">💰 تفاصيل الدفعة</h3>
+        <div style="background: var(--secondary-light); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border-right: 4px solid var(--success);">
+          <h3 style="margin: 0 0 15px 0; color: var(--success); font-size: 1.2em; font-weight: 600;">💰 تفاصيل الدفعة</h3>
           <div style="display: grid; gap: 10px;">
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #666;">المبلغ المدفوع:</span>
-              <strong style="color: #4caf50; font-size: 1.3em;">${formatCurrency(paymentData.amount)}</strong>
+              <span style="color: var(--text-secondary);">المبلغ المدفوع:</span>
+              <strong style="color: var(--success); font-size: 1.3em;">${formatCurrency(paymentData.amount)}</strong>
             </div>
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #666;">طريقة الدفع:</span>
@@ -587,8 +596,8 @@ function showPaymentReceiptAfterSave(paymentData) {
               <strong style="color: #333;">${formatDate(paymentData.payment_date)}</strong>
             </div>
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #666;">الحالة:</span>
-              <span style="background: ${paymentData.status === 'paid' ? '#d1fae5' : '#fef3c7'}; color: ${paymentData.status === 'paid' ? '#059669' : '#d97706'}; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 0.9em;">
+              <span style="color: var(--text-secondary);">الحالة:</span>
+              <span style="background: ${paymentData.status === 'paid' ? 'var(--secondary-light)' : '#FFF3CD'}; color: ${paymentData.status === 'paid' ? 'var(--success)' : 'var(--warning)'}; padding: 6px 12px; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9em; border: 1px solid ${paymentData.status === 'paid' ? 'var(--success)' : 'var(--warning)'};">
                 ${paymentData.status === 'paid' ? '✓ مدفوع' : '⏳ معلق'}
               </span>
             </div>
@@ -596,22 +605,22 @@ function showPaymentReceiptAfterSave(paymentData) {
         </div>
 
         <!-- ملخص مالي -->
-        <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 8px; border-right: 4px solid #ff9800;">
-          <h3 style="margin: 0 0 15px 0; color: #ff9800; font-size: 1.2em;">📊 الملخص المالي</h3>
+        <div style="background: #FFF8E1; padding: 20px; border-radius: var(--radius-md); border-right: 4px solid var(--warning);">
+          <h3 style="margin: 0 0 15px 0; color: var(--warning); font-size: 1.2em; font-weight: 600;">📊 الملخص المالي</h3>
           <div style="display: grid; gap: 10px;">
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #666;">إجمالي المدفوع حتى الآن:</span>
-              <strong style="color: #4caf50; font-size: 1.1em;">${formatCurrency(totalPaid)}</strong>
+              <span style="color: var(--text-secondary);">إجمالي المدفوع حتى الآن:</span>
+              <strong style="color: var(--success); font-size: 1.1em;">${formatCurrency(totalPaid)}</strong>
             </div>
-            <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px dashed #ff9800;">
-              <span style="color: #666; font-weight: 600;">المتبقي:</span>
-              <strong style="color: ${remaining > 0 ? '#ef4444' : '#4caf50'}; font-size: 1.3em;">
+            <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px dashed var(--warning);">
+              <span style="color: var(--text-secondary); font-weight: 600;">المتبقي:</span>
+              <strong style="color: ${remaining > 0 ? 'var(--danger)' : 'var(--success)'}; font-size: 1.3em;">
                 ${formatCurrency(remaining)}
               </strong>
             </div>
             ${remaining <= 0 ? `
-              <div style="text-align: center; margin-top: 10px; padding: 10px; background: #d1fae5; border-radius: 6px;">
-                <span style="color: #059669; font-weight: 700; font-size: 1.1em;">
+              <div style="text-align: center; margin-top: 10px; padding: 12px; background: var(--secondary-light); border-radius: var(--radius-sm); border: 1px solid var(--success);">
+                <span style="color: var(--success); font-weight: 700; font-size: 1.1em;">
                   ✅ تم سداد كامل المبلغ - بارك الله فيكم
                 </span>
               </div>
@@ -620,11 +629,11 @@ function showPaymentReceiptAfterSave(paymentData) {
         </div>
 
         <!-- ملاحظات إضافية -->
-        <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px; text-align: center;">
-          <p style="margin: 0; color: #666; font-size: 0.9em;">
+        <div style="margin-top: 20px; padding: 15px; background: var(--bg-light); border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border);">
+          <p style="margin: 0; color: var(--text-secondary); font-size: 0.9em;">
             نشكركم على ثقتكم بنا 🌟
           </p>
-          <p style="margin: 5px 0 0 0; color: #999; font-size: 0.85em;">
+          <p style="margin: 5px 0 0 0; color: var(--text-light); font-size: 0.85em;">
             تاريخ الإصدار: ${new Date().toLocaleString('ar-EG', { 
               weekday: 'long', 
               year: 'numeric', 

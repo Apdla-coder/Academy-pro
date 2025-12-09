@@ -276,10 +276,10 @@ function updateFilterDropdowns() {
 function renderTeacherExams(exams, container) {
   if (!exams || exams.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 60px 20px;">
-        <i class="fas fa-file-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 15px; display: block;"></i>
-        <p style="color: #999; font-size: 1.1em;">لا توجد اختبارات</p>
-        <p style="color: #bbb; font-size: 0.9em;">سيتم عرض اختبارات المعلمين هنا</p>
+      <div style="text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.1);">
+        <i class="fas fa-file-alt" style="font-size: 3rem; color: #94A3B8; margin-bottom: 15px; display: block;"></i>
+        <p style="color: #CBD5E1; font-size: 1.1em; font-weight: 600;">لا توجد اختبارات</p>
+        <p style="color: #94A3B8; font-size: 0.95em; margin-top: 8px;">سيتم عرض اختبارات المعلمين هنا</p>
       </div>
     `;
     return;
@@ -314,102 +314,103 @@ function renderTeacherExams(exams, container) {
 
     html += `
       <div style="
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        background: var(--bg-card);
         border-radius: 12px;
         padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: var(--shadow-md);
         transition: all 0.3s ease;
-        border-right: 5px solid #667eea;
+        border-right: 4px solid #3B82F6;
         cursor: pointer;
         position: relative;
         overflow: hidden;
-      " class="exam-card" onmouseover="this.style.boxShadow='0 8px 20px rgba(102,126,234,0.2)'; this.style.transform='translateY(-5px)';" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';">
+        border: 1px solid rgba(148, 163, 184, 0.1);
+      " class="exam-card" onmouseover="this.style.boxShadow='var(--shadow-lg)'; this.style.transform='translateY(-5px)'; this.style.borderRightColor='#2563EB';" onmouseout="this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(0)'; this.style.borderRightColor='#3B82F6';">
         
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 2px solid #e8eef7; padding-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; border-bottom: 2px solid rgba(59, 130, 246, 0.2); padding-bottom: 14px;">
           <div style="flex: 1;">
-            <h3 style="margin: 0; color: #333; font-size: 1.1em; font-weight: 700; line-height: 1.3;">
+            <h3 style="margin: 0; color: #F1F5F9; font-size: 1.2em; font-weight: 700; line-height: 1.4;">
               ${escapeHtml(exam.title || 'بدون عنوان')}
             </h3>
-            <p style="margin: 5px 0 0 0; color: #999; font-size: 0.85em;">
+            <p style="margin: 8px 0 0 0; color: #CBD5E1; font-size: 0.9em; font-weight: 500;">
               📅 ${examDate}
             </p>
-            ${exam.date ? `<p style="margin: 3px 0 0 0; color: #667eea; font-size: 0.8em; font-weight: 600;">📆 تاريخ الاختبار: ${new Date(exam.date).toLocaleDateString('ar-EG')}</p>` : ''}
+            ${exam.date ? `<p style="margin: 5px 0 0 0; color: #3B82F6; font-size: 0.85em; font-weight: 600;">📆 تاريخ الاختبار: ${new Date(exam.date).toLocaleDateString('ar-EG')}</p>` : ''}
           </div>
-          <span style="background: ${difficulty.bg}; color: ${difficulty.color}; padding: 6px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600; white-space: nowrap; margin-left: 10px;">
+          <span style="background: ${difficulty.bg}; color: ${difficulty.color}; padding: 8px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 600; white-space: nowrap; margin-left: 10px; border: 1px solid ${difficulty.color};">
             ${difficulty.label}
           </span>
         </div>
 
         <!-- Course & Module -->
-        <div style="background: #f5f7fa; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-          <p style="margin: 0 0 8px 0; color: #666; font-weight: 600; font-size: 0.9em;">
+        <div style="background: var(--bg-secondary); padding: 14px; border-radius: 8px; margin-bottom: 18px; border: 1px solid rgba(148, 163, 184, 0.1);">
+          <p style="margin: 0 0 8px 0; color: #3B82F6; font-weight: 600; font-size: 0.95em;">
             📚 ${escapeHtml(exam.course_name)}
           </p>
-          <p style="margin: 0; color: #888; font-size: 0.85em;">
+          <p style="margin: 0; color: #CBD5E1; font-size: 0.9em;">
             📖 ${escapeHtml(exam.module_name)}
           </p>
         </div>
 
         <!-- Exam Details Grid -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
           <!-- Exam Type -->
-          <div style="text-align: center; padding: 10px; background: #f0f0f0; border-radius: 8px;">
-            <div style="font-size: 1.5em; margin-bottom: 5px;">${examType.icon}</div>
-            <p style="margin: 0; color: #666; font-size: 0.85em;">${examType.label}</p>
+          <div style="text-align: center; padding: 14px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div style="font-size: 1.8em; margin-bottom: 6px;">${examType.icon}</div>
+            <p style="margin: 0; color: #3B82F6; font-size: 0.9em; font-weight: 600;">${examType.label}</p>
           </div>
 
           <!-- Max Score -->
-          <div style="text-align: center; padding: 10px; background: #f0f0f0; border-radius: 8px;">
-            <div style="font-size: 1.5em; margin-bottom: 5px;">📊</div>
-            <p style="margin: 0; color: #667eea; font-weight: 700; font-size: 0.9em;">${exam.max_score || 0} نقطة</p>
+          <div style="text-align: center; padding: 14px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div style="font-size: 1.8em; margin-bottom: 6px;">📊</div>
+            <p style="margin: 0; color: #3B82F6; font-weight: 700; font-size: 1em;">${exam.max_score || 0} نقطة</p>
           </div>
 
           <!-- Pass Score -->
           ${exam.pass_score ? `
-            <div style="text-align: center; padding: 10px; background: #f0f0f0; border-radius: 8px;">
-              <div style="font-size: 1.5em; margin-bottom: 5px;">✅</div>
-              <p style="margin: 0; color: #10b981; font-weight: 700; font-size: 0.9em;">${exam.pass_score || 0} للنجاح</p>
+            <div style="text-align: center; padding: 14px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+              <div style="font-size: 1.8em; margin-bottom: 6px;">✅</div>
+              <p style="margin: 0; color: #10B981; font-weight: 700; font-size: 1em;">${exam.pass_score || 0} للنجاح</p>
             </div>
           ` : ''}
 
           <!-- Time Limit -->
           ${exam.time_limit ? `
-            <div style="text-align: center; padding: 10px; background: #f0f0f0; border-radius: 8px;">
-              <div style="font-size: 1.5em; margin-bottom: 5px;">⏱️</div>
-              <p style="margin: 0; color: #f59e0b; font-weight: 700; font-size: 0.9em;">${exam.time_limit} دقيقة</p>
+            <div style="text-align: center; padding: 14px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2);">
+              <div style="font-size: 1.8em; margin-bottom: 6px;">⏱️</div>
+              <p style="margin: 0; color: #F59E0B; font-weight: 700; font-size: 1em;">${exam.time_limit} دقيقة</p>
             </div>
           ` : ''}
 
           <!-- Questions Count -->
           ${exam.total_questions ? `
-            <div style="text-align: center; padding: 10px; background: #f0f0f0; border-radius: 8px;">
-              <div style="font-size: 1.5em; margin-bottom: 5px;">❓</div>
-              <p style="margin: 0; color: #764ba2; font-weight: 700; font-size: 0.9em;">${exam.total_questions} أسئلة</p>
+            <div style="text-align: center; padding: 14px; background: rgba(139, 92, 246, 0.1); border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.2);">
+              <div style="font-size: 1.8em; margin-bottom: 6px;">❓</div>
+              <p style="margin: 0; color: #8B5CF6; font-weight: 700; font-size: 1em;">${exam.total_questions} أسئلة</p>
             </div>
           ` : ''}
         </div>
 
         <!-- Description -->
         ${exam.description ? `
-          <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-right: 3px solid #667eea;">
-            <p style="margin: 0; color: #555; font-size: 0.9em; line-height: 1.4;">
+          <div style="background: var(--bg-secondary); padding: 14px; border-radius: 8px; margin-bottom: 18px; border-right: 3px solid #3B82F6; border: 1px solid rgba(148, 163, 184, 0.1);">
+            <p style="margin: 0; color: #CBD5E1; font-size: 0.95em; line-height: 1.6;">
               ${escapeHtml(exam.description.substring(0, 100))}${exam.description.length > 100 ? '...' : ''}
             </p>
           </div>
         ` : ''}
 
         <!-- Teacher Info -->
-        <div style="display: flex; align-items: center; gap: 10px; padding: 12px; background: linear-gradient(135deg, #e8eef7 0%, #f5f7fa 100%); border-radius: 8px; margin-bottom: 15px;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 18px; border: 1px solid rgba(148, 163, 184, 0.1);">
           ${exam.teacher_avatar ? `
-            <img src="${escapeHtml(exam.teacher_avatar)}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea;">
+            <img src="${escapeHtml(exam.teacher_avatar)}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #3B82F6;">
           ` : `
-            <div style="width: 40px; height: 40px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+            <div style="width: 45px; height: 45px; border-radius: 50%; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1em;">
               ${escapeHtml(exam.teacher_name).charAt(0)}
             </div>
           `}
           <div style="flex: 1;">
-            <p style="margin: 0; color: #333; font-weight: 600; font-size: 0.9em;">
+            <p style="margin: 0; color: #F1F5F9; font-weight: 600; font-size: 0.95em;">
               👨‍🏫 ${escapeHtml(exam.teacher_name)}
             </p>
           </div>
@@ -417,39 +418,39 @@ function renderTeacherExams(exams, container) {
 
         <!-- Statistics -->
         ${exam.scores && exam.scores.length > 0 ? `
-          <div style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); padding: 12px; border-radius: 8px; margin-bottom: 15px; border-right: 3px solid #4caf50;">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+          <div style="background: rgba(16, 185, 129, 0.1); padding: 16px; border-radius: 8px; margin-bottom: 18px; border-right: 3px solid #10B981; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center;">
               <div>
-                <div style="font-size: 1.2em; font-weight: 700; color: #4caf50;">${exam.students_count || 0}</div>
-                <div style="font-size: 0.75em; color: #666;">طالب</div>
+                <div style="font-size: 1.4em; font-weight: 700; color: #3B82F6;">${exam.students_count || 0}</div>
+                <div style="font-size: 0.8em; color: #CBD5E1; margin-top: 4px; font-weight: 500;">طالب</div>
               </div>
               <div>
-                <div style="font-size: 1.2em; font-weight: 700; color: #2196f3;">${exam.average_score || 0}</div>
-                <div style="font-size: 0.75em; color: #666;">متوسط</div>
+                <div style="font-size: 1.4em; font-weight: 700; color: #10B981;">${exam.average_score || 0}</div>
+                <div style="font-size: 0.8em; color: #CBD5E1; margin-top: 4px; font-weight: 500;">متوسط</div>
               </div>
               <div>
-                <div style="font-size: 1.2em; font-weight: 700; color: ${exam.passed_count > 0 ? '#4caf50' : '#f44336'};">
+                <div style="font-size: 1.4em; font-weight: 700; color: ${exam.passed_count > 0 ? '#10B981' : '#EF4444'};">
                   ${exam.passed_count || 0}/${exam.students_count || 0}
                 </div>
-                <div style="font-size: 0.75em; color: #666;">ناجح</div>
+                <div style="font-size: 0.8em; color: #CBD5E1; margin-top: 4px; font-weight: 500;">ناجح</div>
               </div>
             </div>
           </div>
         ` : `
-          <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; border-right: 3px solid #ff9800;">
-            <p style="margin: 0; color: #856404; font-size: 0.9em;">⚠️ لا توجد درجات مسجلة بعد</p>
+          <div style="background: rgba(245, 158, 11, 0.1); padding: 14px; border-radius: 8px; margin-bottom: 18px; text-align: center; border-right: 3px solid #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2);">
+            <p style="margin: 0; color: #F59E0B; font-size: 0.95em; font-weight: 600;">⚠️ لا توجد درجات مسجلة بعد</p>
           </div>
         `}
 
         <!-- Action Buttons -->
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-primary" data-exam-id="${exam.id}" onclick="window.viewExamDetails(this.getAttribute('data-exam-id'))" style="flex: 1; min-width: 120px; padding: 10px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: background 0.2s;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" data-exam-id="${exam.id}" onclick="window.viewExamDetails(this.getAttribute('data-exam-id'))" style="flex: 1; min-width: 120px; padding: 12px; background: #3B82F6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: all 0.2s;" onmouseover="this.style.background='#2563EB'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#3B82F6'; this.style.transform='translateY(0)';">
             👁️ التفاصيل
           </button>
-          <button class="btn btn-success" data-exam-id="${exam.id}" onclick="window.viewExamScores(this.getAttribute('data-exam-id'))" style="flex: 1; min-width: 120px; padding: 10px; background: #4caf50; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: background 0.2s;">
+          <button class="btn btn-success" data-exam-id="${exam.id}" onclick="window.viewExamScores(this.getAttribute('data-exam-id'))" style="flex: 1; min-width: 120px; padding: 12px; background: #10B981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: all 0.2s;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#10B981'; this.style.transform='translateY(0)';">
             📊 الدرجات
           </button>
-          <button class="btn btn-danger" data-exam-id="${exam.id}" onclick="window.deleteExam(this.getAttribute('data-exam-id'))" style="flex: 1; min-width: 100px; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: background 0.2s;">
+          <button class="btn btn-danger" data-exam-id="${exam.id}" onclick="window.deleteExam(this.getAttribute('data-exam-id'))" style="flex: 1; min-width: 100px; padding: 12px; background: #EF4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: all 0.2s;" onmouseover="this.style.background='#DC2626'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#EF4444'; this.style.transform='translateY(0)';">
             🗑️ حذف
           </button>
         </div>
@@ -534,43 +535,43 @@ window.viewExamScores = async function(examId) {
   modal.className = 'modal';
   modal.style.display = 'block';
   modal.innerHTML = `
-    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-      <div class="modal-header" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); color: white;">
-        <h2 style="margin: 0; color: white;">📊 درجات الطلاب - ${escapeHtml(exam.title)}</h2>
-        <button class="close" onclick="this.closest('.modal').remove()" style="color: white; font-size: 28px;">&times;</button>
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-lg), 0 0 30px rgba(59, 130, 246, 0.2); border: 1px solid rgba(148, 163, 184, 0.1);">
+      <div class="modal-header" style="background: #3B82F6; color: white;">
+        <h2 style="margin: 0; color: white; font-size: 1.5em; font-weight: 700;">📊 درجات الطلاب - ${escapeHtml(exam.title)}</h2>
+        <button class="close" onclick="this.closest('.modal').remove()" style="color: white; font-size: 1.8rem; background: rgba(255, 255, 255, 0.1); width: 40px; height: 40px; border-radius: 8px;">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 25px;">
-        <div style="background: #f5f7fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; text-align: center;">
+      <div class="modal-body" style="padding: 25px; background: var(--bg-card);">
+        <div style="background: var(--bg-secondary); padding: 18px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(148, 163, 184, 0.1);">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; text-align: center;">
             <div>
-              <div style="font-size: 1.5em; font-weight: 700; color: #2196f3;">${scores.length}</div>
-              <div style="font-size: 0.85em; color: #666;">عدد الطلاب</div>
+              <div style="font-size: 1.6em; font-weight: 700; color: #3B82F6;">${scores.length}</div>
+              <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 6px;">عدد الطلاب</div>
             </div>
             <div>
-              <div style="font-size: 1.5em; font-weight: 700; color: #4caf50;">${exam.average_score || 0}</div>
-              <div style="font-size: 0.85em; color: #666;">المتوسط</div>
+              <div style="font-size: 1.6em; font-weight: 700; color: #10B981;">${exam.average_score || 0}</div>
+              <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 6px;">المتوسط</div>
             </div>
             <div>
-              <div style="font-size: 1.5em; font-weight: 700; color: #4caf50;">${exam.passed_count || 0}</div>
-              <div style="font-size: 0.85em; color: #666;">ناجح</div>
+              <div style="font-size: 1.6em; font-weight: 700; color: #10B981;">${exam.passed_count || 0}</div>
+              <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 6px;">ناجح</div>
             </div>
             <div>
-              <div style="font-size: 1.5em; font-weight: 700; color: #f44336;">${exam.failed_count || 0}</div>
-              <div style="font-size: 0.85em; color: #666;">راسب</div>
+              <div style="font-size: 1.6em; font-weight: 700; color: #EF4444;">${exam.failed_count || 0}</div>
+              <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 6px;">راسب</div>
             </div>
           </div>
         </div>
         
         ${scores.length > 0 ? `
           <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse;">
+            <table style="width: 100%; border-collapse: collapse; background: var(--bg-card);">
               <thead>
-                <tr style="background: #667eea; color: white;">
-                  <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">اسم الطالب</th>
-                  <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">الدرجة</th>
-                  <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">النسبة</th>
-                  <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">الحالة</th>
-                  <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">التاريخ</th>
+                <tr style="background: #3B82F6; color: white;">
+                  <th style="padding: 14px; text-align: right; border: none; font-weight: 700;">اسم الطالب</th>
+                  <th style="padding: 14px; text-align: center; border: none; font-weight: 700;">الدرجة</th>
+                  <th style="padding: 14px; text-align: center; border: none; font-weight: 700;">النسبة</th>
+                  <th style="padding: 14px; text-align: center; border: none; font-weight: 700;">الحالة</th>
+                  <th style="padding: 14px; text-align: center; border: none; font-weight: 700;">التاريخ</th>
                 </tr>
               </thead>
               <tbody>
@@ -578,16 +579,16 @@ window.viewExamScores = async function(examId) {
                   const percentage = ((parseFloat(score.score) || 0) / (exam.max_score || 100) * 100).toFixed(1);
                   const passed = parseFloat(score.score) >= (exam.pass_score || 0);
                   return `
-                    <tr style="background: ${idx % 2 === 0 ? '#fff' : '#f9f9f9'};">
-                      <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${escapeHtml(score.student_name)}</td>
-                      <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: 600;">${score.score} / ${exam.max_score}</td>
-                      <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${percentage}%</td>
-                      <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
-                        <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600; background: ${passed ? '#e8f5e9' : '#fee2e2'}; color: ${passed ? '#2e7d32' : '#c62828'};">
+                    <tr style="background: ${idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-secondary)'};">
+                      <td style="padding: 12px; text-align: right; color: #F1F5F9; font-weight: 500;">${escapeHtml(score.student_name)}</td>
+                      <td style="padding: 12px; text-align: center; font-weight: 600; color: #3B82F6;">${score.score} / ${exam.max_score}</td>
+                      <td style="padding: 12px; text-align: center; color: #F1F5F9;">${percentage}%</td>
+                      <td style="padding: 12px; text-align: center;">
+                        <span style="padding: 6px 14px; border-radius: 20px; font-size: 0.9em; font-weight: 600; background: ${passed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; color: ${passed ? '#10B981' : '#EF4444'}; border: 1px solid ${passed ? '#10B981' : '#EF4444'};">
                           ${passed ? '✓ ناجح' : '✗ راسب'}
                         </span>
                       </td>
-                      <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-size: 0.9em; color: #666;">
+                      <td style="padding: 12px; text-align: center; font-size: 0.9em; color: #CBD5E1;">
                         ${score.exam_date ? new Date(score.exam_date).toLocaleDateString('ar-EG') : '-'}
                       </td>
                     </tr>
@@ -597,17 +598,17 @@ window.viewExamScores = async function(examId) {
             </table>
           </div>
         ` : `
-          <div style="text-align: center; padding: 40px; color: #999;">
-            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
-            <p>لا توجد درجات مسجلة لهذا الاختبار</p>
+          <div style="text-align: center; padding: 40px; color: #94A3B8;">
+            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; display: block; color: #94A3B8;"></i>
+            <p style="color: #CBD5E1;">لا توجد درجات مسجلة لهذا الاختبار</p>
           </div>
         `}
       </div>
-      <div class="modal-footer" style="padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
-        <button onclick="window.exportExamScoresExcel('${exam.id}')" class="btn btn-success" style="padding: 10px 20px;">
+      <div class="modal-footer" style="padding: 20px; border-top: 1px solid rgba(148, 163, 184, 0.1); display: flex; gap: 12px; justify-content: flex-end; background: var(--bg-secondary);">
+        <button onclick="window.exportExamScoresExcel('${exam.id}')" class="btn btn-success" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">
           <i class="fas fa-file-excel"></i> تصدير Excel
         </button>
-        <button onclick="this.closest('.modal').remove()" class="btn btn-secondary" style="padding: 10px 20px;">إغلاق</button>
+        <button onclick="this.closest('.modal').remove()" class="btn btn-secondary" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">إغلاق</button>
       </div>
     </div>
   `;
@@ -631,137 +632,137 @@ window.viewExamDetails = function(examId) {
   modal.className = 'modal';
   modal.style.display = 'block';
   modal.innerHTML = `
-    <div class="modal-content" style="max-width: 600px;">
-      <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-        <h2 style="margin: 0; color: white;">📋 تفاصيل الاختبار</h2>
-        <button class="close" onclick="this.closest('.modal').remove()" style="color: white; font-size: 28px;">&times;</button>
+    <div class="modal-content" style="max-width: 600px; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-lg), 0 0 30px rgba(59, 130, 246, 0.2); border: 1px solid rgba(148, 163, 184, 0.1);">
+      <div class="modal-header" style="background: #3B82F6; color: white;">
+        <h2 style="margin: 0; color: white; font-size: 1.5em; font-weight: 700;">📋 تفاصيل الاختبار</h2>
+        <button class="close" onclick="this.closest('.modal').remove()" style="color: white; font-size: 1.8rem; background: rgba(255, 255, 255, 0.1); width: 40px; height: 40px; border-radius: 8px;">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 25px;">
-        <div style="display: grid; gap: 15px;">
+      <div class="modal-body" style="padding: 25px; background: var(--bg-card);">
+        <div style="display: grid; gap: 18px;">
           <!-- Title -->
           <div>
-            <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">📝 اسم الاختبار</label>
-            <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px; font-size: 1.05em;">${escapeHtml(exam.title)}</p>
+            <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">📝 اسم الاختبار</label>
+            <p style="margin: 0; color: #F1F5F9; padding: 12px; background: var(--bg-secondary); border-radius: 8px; font-size: 1.05em; border: 1px solid rgba(148, 163, 184, 0.1);">${escapeHtml(exam.title)}</p>
           </div>
 
           <!-- Course & Module -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">📚 الكورس</label>
-              <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px;">${escapeHtml(exam.course_name)}</p>
+              <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">📚 الكورس</label>
+              <p style="margin: 0; color: #F1F5F9; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1);">${escapeHtml(exam.course_name)}</p>
             </div>
             <div>
-              <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">📖 الوحدة</label>
-              <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px;">${escapeHtml(exam.module_name)}</p>
+              <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">📖 الوحدة</label>
+              <p style="margin: 0; color: #F1F5F9; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1);">${escapeHtml(exam.module_name)}</p>
             </div>
           </div>
 
           <!-- Exam Details Grid -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">📊 الدرجة العظمى</label>
-              <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px; font-weight: 700;">${exam.max_score} نقطة</p>
+              <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">📊 الدرجة العظمى</label>
+              <p style="margin: 0; color: #3B82F6; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.2);">${exam.max_score} نقطة</p>
             </div>
             ${exam.pass_score ? `
               <div>
-                <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">✅ درجة النجاح</label>
-                <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px; font-weight: 700;">${exam.pass_score} نقطة</p>
+                <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">✅ درجة النجاح</label>
+                <p style="margin: 0; color: #10B981; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2);">${exam.pass_score} نقطة</p>
               </div>
             ` : ''}
           </div>
 
           <!-- Time & Questions -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             ${exam.time_limit ? `
               <div>
-                <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">⏱️ الوقت المحدد</label>
-                <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px; font-weight: 700;">${exam.time_limit} دقيقة</p>
+                <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">⏱️ الوقت المحدد</label>
+                <p style="margin: 0; color: #F1F5F9; padding: 12px; background: var(--bg-secondary); border-radius: 8px; font-weight: 700; border: 1px solid rgba(148, 163, 184, 0.1);">${exam.time_limit} دقيقة</p>
               </div>
             ` : ''}
             ${exam.total_questions ? `
               <div>
-                <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">❓ عدد الأسئلة</label>
-                <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px; font-weight: 700;">${exam.total_questions} أسئلة</p>
+                <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">❓ عدد الأسئلة</label>
+                <p style="margin: 0; color: #F1F5F9; padding: 12px; background: var(--bg-secondary); border-radius: 8px; font-weight: 700; border: 1px solid rgba(148, 163, 184, 0.1);">${exam.total_questions} أسئلة</p>
               </div>
             ` : ''}
           </div>
 
           <!-- Type & Difficulty -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">📋 نوع الاختبار</label>
-              <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px;">${getExamTypeLabel(exam.exam_type)}</p>
+              <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">📋 نوع الاختبار</label>
+              <p style="margin: 0; color: #F1F5F9; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1);">${getExamTypeLabel(exam.exam_type)}</p>
             </div>
             <div>
-              <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">🎯 مستوى الصعوبة</label>
-              <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px;">${getDifficultyLabel(exam.difficulty_level)}</p>
+              <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">🎯 مستوى الصعوبة</label>
+              <p style="margin: 0; color: #F1F5F9; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1);">${getDifficultyLabel(exam.difficulty_level)}</p>
             </div>
           </div>
 
           <!-- Description -->
           ${exam.description ? `
             <div>
-              <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">📝 الوصف</label>
-              <p style="margin: 0; color: #333; padding: 10px; background: #f5f7fa; border-radius: 6px; line-height: 1.5;">${escapeHtml(exam.description)}</p>
+              <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">📝 الوصف</label>
+              <p style="margin: 0; color: #CBD5E1; padding: 12px; background: var(--bg-secondary); border-radius: 8px; line-height: 1.6; border: 1px solid rgba(148, 163, 184, 0.1);">${escapeHtml(exam.description)}</p>
             </div>
           ` : ''}
 
           <!-- Teacher -->
           <div>
-            <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">👨‍🏫 المعلم</label>
-            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f7fa; border-radius: 6px;">
+            <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">👨‍🏫 المعلم</label>
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1);">
               ${exam.teacher_avatar ? `
-                <img src="${escapeHtml(exam.teacher_avatar)}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                <img src="${escapeHtml(exam.teacher_avatar)}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
               ` : `
-                <div style="width: 35px; height: 35px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9em;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: #3B82F6; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1em;">
                   ${escapeHtml(exam.teacher_name).charAt(0)}
                 </div>
               `}
-              <p style="margin: 0; color: #333; font-weight: 600;">${escapeHtml(exam.teacher_name)}</p>
+              <p style="margin: 0; color: #F1F5F9; font-weight: 600;">${escapeHtml(exam.teacher_name)}</p>
             </div>
           </div>
 
           <!-- Created Date -->
           <div>
-            <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 5px;">📅 تاريخ الإنشاء</label>
-            <p style="margin: 0; color: #999; padding: 10px; background: #f5f7fa; border-radius: 6px; font-size: 0.9em;">
+            <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 8px; font-size: 1em;">📅 تاريخ الإنشاء</label>
+            <p style="margin: 0; color: #CBD5E1; padding: 12px; background: var(--bg-secondary); border-radius: 8px; font-size: 0.95em; border: 1px solid rgba(148, 163, 184, 0.1);">
               ${new Date(exam.created_at).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
           
           <!-- Statistics -->
           ${exam.scores && exam.scores.length > 0 ? `
-            <div style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); padding: 15px; border-radius: 8px; border-right: 4px solid #4caf50;">
-              <label style="font-weight: 600; color: #667eea; display: block; margin-bottom: 10px;">📊 إحصائيات الدرجات</label>
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div style="background: rgba(16, 185, 129, 0.1); padding: 18px; border-radius: 8px; border-right: 4px solid #10B981; border: 1px solid rgba(16, 185, 129, 0.2);">
+              <label style="font-weight: 600; color: #3B82F6; display: block; margin-bottom: 12px; font-size: 1.1em;">📊 إحصائيات الدرجات</label>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
                 <div>
-                  <div style="font-size: 1.2em; font-weight: 700; color: #2196f3;">${exam.students_count || 0}</div>
-                  <div style="font-size: 0.85em; color: #666;">عدد الطلاب</div>
+                  <div style="font-size: 1.4em; font-weight: 700; color: #3B82F6;">${exam.students_count || 0}</div>
+                  <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 4px;">عدد الطلاب</div>
                 </div>
                 <div>
-                  <div style="font-size: 1.2em; font-weight: 700; color: #4caf50;">${exam.average_score || 0}</div>
-                  <div style="font-size: 0.85em; color: #666;">المتوسط</div>
+                  <div style="font-size: 1.4em; font-weight: 700; color: #10B981;">${exam.average_score || 0}</div>
+                  <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 4px;">المتوسط</div>
                 </div>
                 <div>
-                  <div style="font-size: 1.2em; font-weight: 700; color: #4caf50;">${exam.passed_count || 0}</div>
-                  <div style="font-size: 0.85em; color: #666;">ناجح</div>
+                  <div style="font-size: 1.4em; font-weight: 700; color: #10B981;">${exam.passed_count || 0}</div>
+                  <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 4px;">ناجح</div>
                 </div>
                 <div>
-                  <div style="font-size: 1.2em; font-weight: 700; color: #f44336;">${exam.failed_count || 0}</div>
-                  <div style="font-size: 0.85em; color: #666;">راسب</div>
+                  <div style="font-size: 1.4em; font-weight: 700; color: #EF4444;">${exam.failed_count || 0}</div>
+                  <div style="font-size: 0.9em; color: #CBD5E1; margin-top: 4px;">راسب</div>
                 </div>
               </div>
             </div>
           ` : ''}
         </div>
       </div>
-      <div class="modal-footer" style="padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end;">
+      <div class="modal-footer" style="padding: 20px; border-top: 1px solid rgba(148, 163, 184, 0.1); display: flex; gap: 12px; justify-content: flex-end; background: var(--bg-secondary);">
         ${exam.scores && exam.scores.length > 0 ? `
-          <button onclick="window.viewExamScores('${exam.id}'); this.closest('.modal').remove();" class="btn btn-success" style="padding: 10px 20px;">
+          <button onclick="window.viewExamScores('${exam.id}'); this.closest('.modal').remove();" class="btn btn-success" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">
             <i class="fas fa-chart-bar"></i> عرض الدرجات
           </button>
         ` : ''}
-        <button onclick="this.closest('.modal').remove()" class="btn btn-secondary" style="padding: 10px 20px;">إغلاق</button>
+        <button onclick="this.closest('.modal').remove()" class="btn btn-secondary" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">إغلاق</button>
       </div>
     </div>
   `;

@@ -44,11 +44,16 @@ async function loadStudents(forceRefresh = false) {
       `;
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('students')
-      .select('id, full_name, email, phone, address, birthdate, guardian_name, guardian_phone, notes')
-      .eq('academy_id', window.currentAcademyId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .select('id, full_name, email, phone, address, birthdate, guardian_name, guardian_phone, notes, created_at')
+        .eq('academy_id', window.currentAcademyId)
+        .order('created_at', { ascending: false })
+        .limit(1000), // Limit for performance
+      'خطأ في تحميل الطلاب',
+      false
+    );
 
     if (error) throw error;
     
@@ -110,7 +115,7 @@ function renderStudentsTable(data, container) {
       </div>`;
 
   if (!data || data.length === 0) {
-    html += '<div style="text-align: center; padding: 60px 20px;"><p style="color: #999; font-size: 1.1em;">📚 لا توجد بيانات طلاب</p></div>';
+    html += '<div style="text-align: center; padding: 60px 20px;"><p style="color: var(--text-light); font-size: 1.1em;">📚 لا توجد بيانات طلاب</p></div>';
   } else {
     html += `<div class="students-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px;">`;
     
@@ -137,42 +142,43 @@ function renderStudentsTable(data, container) {
       
       html += `
         <div style="
-          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-          border-radius: 12px;
+          background: var(--bg-card);
+          border-radius: var(--radius-md);
           padding: 20px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          box-shadow: var(--shadow-md);
           transition: all 0.3s ease;
-          border-right: 5px solid #667eea;
+          border-right: 4px solid #3B82F6;
           cursor: pointer;
-        " class="student-card" onmouseover="this.style.boxShadow='0 8px 20px rgba(102,126,234,0.2)'; this.style.transform='translateY(-5px)';" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)';">
+          border: 1px solid rgba(148, 163, 184, 0.1);
+        " class="student-card" onmouseover="this.style.boxShadow='var(--shadow-lg)'; this.style.transform='translateY(-3px)';" onmouseout="this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(0)';">
           
           <!-- Header with student name -->
-          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 2px solid #e8eef7; padding-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 2px solid rgba(148, 163, 184, 0.1); padding-bottom: 12px;">
             <div>
-              <h3 style="margin: 0; color: #333; font-size: 1.2em; font-weight: 700;">${escapeHtml(student.full_name)}</h3>
-              <p style="margin: 5px 0 0 0; color: #999; font-size: 0.9em;">🆔 ${student.id.substring(0, 8)}...</p>
+              <h3 style="margin: 0; color: #F1F5F9; font-size: 1.2em; font-weight: 700;">${escapeHtml(student.full_name)}</h3>
+              <p style="margin: 5px 0 0 0; color: #CBD5E1; font-size: 0.9em;">🆔 ${student.id.substring(0, 8)}...</p>
             </div>
-            <span style="background: #667eea; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">
+            <span style="background: #3B82F6; color: white; padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.85em; font-weight: 600;">
               ${subscriptions.length} اشتراك
             </span>
           </div>
 
           <!-- Contact Information -->
-          <div style="background: #f5f7fa; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+          <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-md); margin-bottom: 15px; border: 1px solid rgba(148, 163, 184, 0.1);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
               <div>
-                <p style="margin: 0 0 3px 0; color: #666;"><strong>📧 البريد:</strong></p>
-                <p style="margin: 0; color: #333; word-break: break-all;">${escapeHtml(student.email || '-')}</p>
+                <p style="margin: 0 0 3px 0; color: #CBD5E1;"><strong>📧 البريد:</strong></p>
+                <p style="margin: 0; color: #F1F5F9; word-break: break-all;">${escapeHtml(student.email || '-')}</p>
               </div>
               <div>
-                <p style="margin: 0 0 3px 0; color: #666;"><strong>📱 الهاتف:</strong></p>
-                <p style="margin: 0; color: #333;">${escapeHtml(student.phone || '-')}</p>
+                <p style="margin: 0 0 3px 0; color: #CBD5E1;"><strong>📱 الهاتف:</strong></p>
+                <p style="margin: 0; color: #F1F5F9;">${escapeHtml(student.phone || '-')}</p>
               </div>
             </div>
             ${student.guardian_name ? `
-              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-                <p style="margin: 0 0 3px 0; color: #666;"><strong> ولي الأمر:</strong></p>
-                <p style="margin: 0; color: #333;">${escapeHtml(student.guardian_name)} ${student.guardian_phone ? `(${student.guardian_phone})` : ''}</p>
+              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+                <p style="margin: 0 0 3px 0; color: #CBD5E1;"><strong> ولي الأمر:</strong></p>
+                <p style="margin: 0; color: #F1F5F9;">${escapeHtml(student.guardian_name)} ${student.guardian_phone ? `(${student.guardian_phone})` : ''}</p>
               </div>
             ` : ''}
           </div>
@@ -180,32 +186,32 @@ function renderStudentsTable(data, container) {
           <!-- Courses -->
           ${coursesList ? `
             <div style="margin-bottom: 15px;">
-              <p style="margin: 0 0 8px 0; color: #666; font-weight: 600;">📚 الكورسات:</p>
-              <div style="background: #e8eef7; padding: 10px; border-radius: 6px; font-size: 0.9em; color: #333; max-height: 60px; overflow-y: auto;">
+              <p style="margin: 0 0 8px 0; color: #CBD5E1; font-weight: 600;">📚 الكورسات:</p>
+              <div style="background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: var(--radius-sm); font-size: 0.9em; color: #F1F5F9; max-height: 60px; overflow-y: auto; border: 1px solid rgba(59, 130, 246, 0.2);">
                 ${coursesList}
               </div>
             </div>
           ` : ''}
 
           <!-- Financial Stats -->
-          <div style="background: linear-gradient(135deg, #f5f7fa 0%, #e8eef7 100%); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+          <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-md); margin-bottom: 15px; border: 1px solid rgba(148, 163, 184, 0.1);">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
               <div>
-                <p style="margin: 0 0 3px 0; color: #666;">💰 الإجمالي</p>
-                <p style="margin: 0; color: #667eea; font-weight: 700; font-size: 1.1em;">${formatCurrency(totalSubscriptionCost)}</p>
+                <p style="margin: 0 0 3px 0; color: #CBD5E1;">💰 الإجمالي</p>
+                <p style="margin: 0; color: #3B82F6; font-weight: 700; font-size: 1.1em;">${formatCurrency(totalSubscriptionCost)}</p>
               </div>
               <div>
-                <p style="margin: 0 0 3px 0; color: #666;">✅ المدفوع</p>
-                <p style="margin: 0; color: #4caf50; font-weight: 700; font-size: 1.1em;">${formatCurrency(totalPayments)}</p>
+                <p style="margin: 0 0 3px 0; color: #CBD5E1;">✅ المدفوع</p>
+                <p style="margin: 0; color: #10B981; font-weight: 700; font-size: 1.1em;">${formatCurrency(totalPayments)}</p>
               </div>
             </div>
             
             <!-- Progress Bar -->
             <div style="margin-top: 10px;">
-              <div style="background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
-                <div style="background: linear-gradient(90deg, #4caf50 0%, #45a049 100%); height: 100%; width: ${Math.min(paymentPercentage, 100)}%; transition: width 0.3s ease;"></div>
+              <div style="background: var(--bg-tertiary); height: 8px; border-radius: var(--radius-sm); overflow: hidden;">
+                <div style="background: #10B981; height: 100%; width: ${Math.min(paymentPercentage, 100)}%; transition: width 0.3s ease;"></div>
               </div>
-              <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #999;">
+              <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #94A3B8;">
                 ${remaining > 0 ? `المتبقي: ${formatCurrency(remaining)}` : '✅ مدفوع بالكامل'}
               </p>
             </div>
@@ -213,23 +219,23 @@ function renderStudentsTable(data, container) {
 
           <!-- Stats Row -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.9em;">
-            <div style="text-align: center; padding: 10px; background: #f0f0f0; border-radius: 6px;">
-              <p style="margin: 0; color: #666;">🧾 الدفعات</p>
-              <p style="margin: 5px 0 0 0; font-weight: 700; color: #333; font-size: 1.3em;">${payments.length}</p>
+            <div style="text-align: center; padding: 10px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid rgba(148, 163, 184, 0.1);">
+              <p style="margin: 0; color: #CBD5E1;">🧾 الدفعات</p>
+              <p style="margin: 5px 0 0 0; font-weight: 700; color: #F1F5F9; font-size: 1.3em;">${payments.length}</p>
             </div>
-            <div style="text-align: center; padding: 10px; background: #f0f0f0; border-radius: 6px;">
-              <p style="margin: 0; color: #666;">📊 نسبة الدفع</p>
-              <p style="margin: 5px 0 0 0; font-weight: 700; color: #667eea; font-size: 1.3em;">${Math.round(paymentPercentage)}%</p>
+            <div style="text-align: center; padding: 10px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid rgba(148, 163, 184, 0.1);">
+              <p style="margin: 0; color: #CBD5E1;">📊 نسبة الدفع</p>
+              <p style="margin: 5px 0 0 0; font-weight: 700; color: #3B82F6; font-size: 1.3em;">${Math.round(paymentPercentage)}%</p>
             </div>
           </div>
 
           <!-- Action Buttons -->
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-            <button class="action-btn" onclick="editStudent('${student.id}')" style="background: #667eea; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">✏️ تعديل</button>
-            <button class="action-btn" onclick="showStudentDetails('${student.id}')" style="background: #2196F3; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.background='#1976D2'" onmouseout="this.style.background='#2196F3'">👁️ تفاصيل</button>
-            <button class="action-btn" onclick="showStudentQR('${student.id}')" style="background: #9c27b0; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.background='#7b1fa2'" onmouseout="this.style.background='#9c27b0'">📱 QR Code</button>
-            <button class="action-btn" onclick="sendStudentReport('${student.id}')" style="background: #4caf50; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.background='#45a049'" onmouseout="this.style.background='#4caf50'">📊 تقرير</button>
-            <button class="action-btn" onclick="deleteStudent('${student.id}')" style="background: #f44336; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.background='#da190b'" onmouseout="this.style.background='#f44336'">🗑️ حذف</button>
+            <button class="action-btn" onclick="editStudent('${student.id}')" style="background: #3B82F6; color: white; padding: 10px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.background='#2563EB'" onmouseout="this.style.background='#3B82F6'">✏️ تعديل</button>
+            <button class="action-btn" onclick="showStudentDetails('${student.id}')" style="background: #8B5CF6; color: white; padding: 10px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">👁️ تفاصيل</button>
+            <button class="action-btn" onclick="showStudentQR('${student.id}')" style="background: #64748B; color: white; padding: 10px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">📱 QR Code</button>
+            <button class="action-btn" onclick="sendStudentReport('${student.id}')" style="background: #10B981; color: white; padding: 10px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">📊 تقرير</button>
+            <button class="action-btn" onclick="deleteStudent('${student.id}')" style="background: #EF4444; color: white; padding: 10px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; transition: 0.3s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">🗑️ حذف</button>
           </div>
         </div>
       `;
@@ -280,11 +286,16 @@ async function loadCourses(forceRefresh = false) {
       `;
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('courses')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .select('id, name, description, price, teacher_id, start_date, end_date, created_at, academy_id')
+        .eq('academy_id', window.currentAcademyId)
+        .order('created_at', { ascending: false })
+        .limit(500), // Limit for performance
+      'خطأ في تحميل الكورسات',
+      false
+    );
 
     if (error) throw error;
     
@@ -320,12 +331,16 @@ async function loadTeachers() {
     }
     
     // Direct query - simplified
-    const { data, error } = await window.supabaseClient
-      .from('profiles')
-      .select('id, full_name, role, academy_id')
-      .eq('academy_id', academyId)
-      .eq('role', 'teacher')
-      .order('full_name', { ascending: true });
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('profiles')
+        .select('id, full_name, role, academy_id')
+        .eq('academy_id', academyId)
+        .eq('role', 'teacher')
+        .order('full_name', { ascending: true }),
+      'خطأ في تحميل المعلمين',
+      false
+    );
 
     if (error) {
       console.error('❌ Error loading teachers:', error.message);
@@ -343,7 +358,7 @@ async function loadTeachers() {
 function renderCoursesTable(data, container) {
   if (!data || data.length === 0) {
     container.innerHTML = `
-      <div style="padding: 40px; text-align: center; color: #999; grid-column: 1/-1;">
+      <div style="padding: 40px; text-align: center; color: var(--text-light); grid-column: 1/-1;">
         <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
         <p style="font-size: 1.1rem;">لا توجد كورسات</p>
         <button class="btn btn-primary" onclick="showAddCourseModal()" style="margin-top: 15px;">
@@ -362,44 +377,44 @@ function renderCoursesTable(data, container) {
     const teacherName = teacher?.full_name || 'لم يتم تعيين';
     
     return `
-      <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s; cursor: pointer; hover: transform 0.3s ease-in-out;" onmouseover="this.style.boxShadow='0 8px 16px rgba(0,0,0,0.15)'; this.style.transform='translateY(-4px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(0)'">
-        <!-- Header with gradient -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-bottom: 3px solid #667eea;">
-          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">${escapeHtml(course.name)}</h3>
-          <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 0.8rem;"> ${escapeHtml(teacherName)}</p>
+      <div style="background: var(--bg-card); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-md); transition: all 0.3s; cursor: pointer; border: 1px solid rgba(148, 163, 184, 0.1);" onmouseover="this.style.boxShadow='var(--shadow-lg)'; this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(0)'">
+        <!-- Header -->
+        <div style="background: #3B82F6; color: white; padding: 15px; border-bottom: 3px solid #2563EB;">
+          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: white;">${escapeHtml(course.name)}</h3>
+          <p style="margin: 5px 0 0 0; opacity: 0.95; font-size: 0.85rem; color: white;"> ${escapeHtml(teacherName)}</p>
         </div>
 
         <!-- Content -->
         <div style="padding: 15px;">
-          <p style="margin: 0 0 12px 0; color: #666; font-size: 0.9rem; line-height: 1.4;">
+          <p style="margin: 0 0 12px 0; color: #CBD5E1; font-size: 0.9rem; line-height: 1.4;">
             ${escapeHtml(course.description || 'بدون وصف')}
           </p>
 
           <!-- Stats Grid -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-            <div style="background: #f0f7ff; padding: 10px; border-radius: 6px; text-align: center;">
-              <div style="font-size: 0.75rem; color: #666; margin-bottom: 4px;">السعر</div>
-              <div style="font-size: 1.2rem; font-weight: bold; color: #2196f3;">${formatCurrency(course.price || 0)}</div>
+            <div style="background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: var(--radius-sm); text-align: center; border: 1px solid rgba(59, 130, 246, 0.2);">
+              <div style="font-size: 0.75rem; color: #CBD5E1; margin-bottom: 4px; font-weight: 600;">السعر</div>
+              <div style="font-size: 1.2rem; font-weight: bold; color: #3B82F6;">${formatCurrency(course.price || 0)}</div>
             </div>
-            <div style="background: #f0fdf4; padding: 10px; border-radius: 6px; text-align: center;">
-              <div style="font-size: 0.75rem; color: #666; margin-bottom: 4px;">الطلاب</div>
-              <div style="font-size: 1.2rem; font-weight: bold; color: #4caf50;">${studentCount}</div>
+            <div style="background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: var(--radius-sm); text-align: center; border: 1px solid rgba(16, 185, 129, 0.2);">
+              <div style="font-size: 0.75rem; color: #CBD5E1; margin-bottom: 4px; font-weight: 600;">الطلاب</div>
+              <div style="font-size: 1.2rem; font-weight: bold; color: #10B981;">${studentCount}</div>
             </div>
           </div>
 
           <!-- Revenue Info -->
-          <div style="background: #fffbf0; padding: 10px; border-radius: 6px; border-right: 3px solid #ff9800; margin-bottom: 12px;">
-            <div style="font-size: 0.75rem; color: #666; margin-bottom: 2px;">الإيرادات</div>
-            <div style="font-size: 1.1rem; font-weight: bold; color: #ff9800;">${formatCurrency(totalRevenue)}</div>
+          <div style="background: rgba(245, 158, 11, 0.1); padding: 10px; border-radius: var(--radius-sm); border-right: 3px solid #F59E0B; margin-bottom: 12px; border: 1px solid rgba(245, 158, 11, 0.2);">
+            <div style="font-size: 0.75rem; color: #CBD5E1; margin-bottom: 2px; font-weight: 600;">الإيرادات</div>
+            <div style="font-size: 1.1rem; font-weight: bold; color: #F59E0B;">${formatCurrency(totalRevenue)}</div>
           </div>
         </div>
 
         <!-- Actions -->
-        <div style="padding: 12px 15px; background: #f9f9f9; border-top: 1px solid #eee; display: flex; gap: 8px;">
-          <button class="action-btn" onclick="openCourseManagement('${course.id}')" style="flex: 1; background: #667eea; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500;">
+        <div style="padding: 12px 15px; background: var(--bg-secondary); border-top: 1px solid rgba(148, 163, 184, 0.1); display: flex; gap: 8px;">
+          <button class="action-btn" onclick="openCourseManagement('${course.id}')" style="flex: 1; background: #3B82F6; color: white; border: none; padding: 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; font-weight: 600;">
             📚 إدارة
           </button>
-          <button class="action-btn" onclick="deleteCourse('${course.id}')" style="flex: 1; background: #f44336; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500;">
+          <button class="action-btn" onclick="deleteCourse('${course.id}')" style="flex: 1; background: #EF4444; color: white; border: none; padding: 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; font-weight: 600;">
             🗑️ حذف
           </button>
         </div>
@@ -411,16 +426,29 @@ function renderCoursesTable(data, container) {
   updateCoursesStats(data);
 }
 
-function updateCoursesStats(data) {
-  const totalCourses = data.length;
+function updateCoursesStats(data = null) {
+  // Use provided data or fallback to window.courses
+  const coursesData = data || window.courses || [];
+  
+  if (!Array.isArray(coursesData)) {
+    console.warn('⚠️ updateCoursesStats: coursesData is not an array', coursesData);
+    return;
+  }
+  
+  const totalCourses = coursesData.length;
   const totalStudents = (window.subscriptions || []).length;
   const totalRevenue = (window.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
-  const avgPrice = totalCourses > 0 ? data.reduce((sum, c) => sum + (c.price || 0), 0) / totalCourses : 0;
+  const avgPrice = totalCourses > 0 ? coursesData.reduce((sum, c) => sum + (c.price || 0), 0) / totalCourses : 0;
 
-  document.getElementById('totalCoursesCount').textContent = totalCourses;
-  document.getElementById('totalCoursesStudents').textContent = totalStudents;
-  document.getElementById('totalCoursesRevenue').textContent = formatCurrency(totalRevenue);
-  document.getElementById('averageCoursePrice').textContent = formatCurrency(avgPrice);
+  const totalCoursesCountEl = document.getElementById('totalCoursesCount');
+  const totalCoursesStudentsEl = document.getElementById('totalCoursesStudents');
+  const totalCoursesRevenueEl = document.getElementById('totalCoursesRevenue');
+  const averageCoursePriceEl = document.getElementById('averageCoursePrice');
+
+  if (totalCoursesCountEl) totalCoursesCountEl.textContent = totalCourses;
+  if (totalCoursesStudentsEl) totalCoursesStudentsEl.textContent = totalStudents;
+  if (totalCoursesRevenueEl) totalCoursesRevenueEl.textContent = formatCurrency(totalRevenue);
+  if (averageCoursePriceEl) averageCoursePriceEl.textContent = formatCurrency(avgPrice);
 }
 
 // === Subscriptions Data ===
@@ -493,23 +521,23 @@ function renderSubscriptionsTable(data, container) {
 
     html += `
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-        <div style="background: #e3f2fd; padding: 12px; border-radius: 6px; text-align: center;">
-          <p style="margin: 0; color: #1976d2; font-size: 0.85em;">إجمالي الاشتراكات</p>
-          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: #1565c0;">${data.length}</p>
+        <div style="background: var(--primary-light); padding: 12px; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border);">
+          <p style="margin: 0; color: var(--primary); font-size: 0.85em; font-weight: 600;">إجمالي الاشتراكات</p>
+          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: var(--primary-dark);">${data.length}</p>
         </div>
-        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; text-align: center;">
-          <p style="margin: 0; color: #388e3c; font-size: 0.85em;">✓ الاشتراكات النشطة</p>
-          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: #2e7d32;">${activeCount}</p>
+        <div style="background: var(--secondary-light); padding: 12px; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border);">
+          <p style="margin: 0; color: var(--success); font-size: 0.85em; font-weight: 600;">✓ الاشتراكات النشطة</p>
+          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: var(--success);">${activeCount}</p>
         </div>
-        <div style="background: #ffebee; padding: 12px; border-radius: 6px; text-align: center;">
-          <p style="margin: 0; color: #c62828; font-size: 0.85em;">✗ المنتهية</p>
-          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: #b71c1c;">${inactiveCount}</p>
+        <div style="background: #FFE5E5; padding: 12px; border-radius: var(--radius-sm); text-align: center; border: 1px solid var(--border);">
+          <p style="margin: 0; color: var(--danger); font-size: 0.85em; font-weight: 600;">✗ المنتهية</p>
+          <p style="margin: 5px 0 0 0; font-size: 1.5em; font-weight: 700; color: var(--danger);">${inactiveCount}</p>
         </div>
       </div>
 
       <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden;">
         <thead>
-          <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+          <tr style="background: var(--primary); color: white;">
             <th style="padding: 12px; text-align: right; font-weight: 600;">👤 الطالب</th>
             <th style="padding: 12px; text-align: right; font-weight: 600;">📖 الكورس</th>
             <th style="padding: 12px; text-align: right; font-weight: 600;">💰 السعر</th>
@@ -521,25 +549,25 @@ function renderSubscriptionsTable(data, container) {
         </thead>
         <tbody>
           ${data.map((sub, idx) => `
-            <tr style="border-bottom: 1px solid #eee; ${idx % 2 === 0 ? 'background: #f9f9f9;' : 'background: white;'} transition: background 0.2s;">
+            <tr style="border-bottom: 1px solid var(--border); ${idx % 2 === 0 ? 'background: var(--bg-light);' : 'background: var(--bg-white);'} transition: background 0.2s;">
               <td style="padding: 12px; text-align: right; font-weight: 500;">${escapeHtml(sub.student_name || '-')}</td>
               <td style="padding: 12px; text-align: right;">${escapeHtml(sub.course_name || '-')}</td>
-              <td style="padding: 12px; text-align: right; font-weight: 600; color: #2e7d32;">${formatCurrency(sub.course_price || 0)}</td>
+              <td style="padding: 12px; text-align: right; font-weight: 600; color: var(--success);">${formatCurrency(sub.course_price || 0)}</td>
               <td style="padding: 12px; text-align: right; font-size: 0.9em;">${formatDate(sub.start_date)}</td>
               <td style="padding: 12px; text-align: right; font-size: 0.9em;">${formatDate(sub.end_date)}</td>
               <td style="padding: 12px; text-align: right;">
                 <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; ${
                   sub.status === 'active' 
-                    ? 'background: #c8e6c9; color: #1b5e20;' 
-                    : 'background: #ffcdd2; color: #b71c1c;'
+                    ? 'background: var(--secondary-light); color: var(--success);' 
+                    : 'background: #FFE5E5; color: var(--danger);'
                 }">
                   ${sub.status === 'active' ? '✓ نشط' : '✗ منتهي'}
                 </span>
               </td>
               <td style="padding: 12px; text-align: right;">
-                <button class="action-btn" onclick="showSubscriptionDetails('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">📋</button>
-                <button class="action-btn" onclick="editSubscription('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">✏️</button>
-                <button class="action-btn" onclick="deleteSubscription('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">🗑️</button>
+                <button class="action-btn" onclick="showSubscriptionDetails('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85em;">📋</button>
+                <button class="action-btn" onclick="editSubscription('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: var(--success); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85em;">✏️</button>
+                <button class="action-btn" onclick="deleteSubscription('${sub.id}')" style="padding: 5px 10px; margin: 0 2px; background: var(--danger); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85em;">🗑️</button>
               </td>
             </tr>
           `).join('')}
@@ -575,23 +603,36 @@ async function loadPayments(forceRefresh = false) {
       return;
     }
 
-    const { data: paymentsData, error } = await window.supabaseClient
-      .from('payments')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId)
-      .order('payment_date', { ascending: false });
+    const { data: paymentsData, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('payments')
+        .select('id, student_id, course_id, amount, payment_method, payment_date, status, created_at, academy_id')
+        .eq('academy_id', window.currentAcademyId)
+        .order('payment_date', { ascending: false })
+        .limit(1000), // Limit for performance
+      'خطأ في تحميل المدفوعات',
+      false
+    );
 
     if (error) throw error;
 
     // Get related data
-    const { data: studentsData } = await window.supabaseClient
-      .from('students')
-      .select('id, full_name');
+    const { data: studentsData } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .select('id, full_name'),
+      'خطأ في تحميل بيانات الطلاب',
+      false
+    );
 
-    const { data: coursesData } = await window.supabaseClient
-      .from('courses')
-      .select('id, name, price')
-      .eq('academy_id', window.currentAcademyId);
+    const { data: coursesData } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .select('id, name, price')
+        .eq('academy_id', window.currentAcademyId),
+      'خطأ في تحميل بيانات الكورسات',
+      false
+    );
 
     // Manual join
     const data = paymentsData.map(payment => ({
@@ -641,52 +682,52 @@ function renderPaymentsTable(data, container) {
   const html = `
     <div class="table-container">
       <!-- إزرار التحكم العلوية -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <button class="btn btn-primary" onclick="showAddPaymentModal()">
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+        <button class="btn btn-primary" onclick="showAddPaymentModal()" style="font-size: 1em; font-weight: 600; padding: 12px 20px;">
           <i class="fas fa-plus"></i> إضافة دفعة
         </button>
-        <button class="btn btn-success" onclick="exportPaymentsExcel()">
+        <button class="btn btn-success" onclick="exportPaymentsExcel()" style="font-size: 1em; font-weight: 600; padding: 12px 20px;">
           <i class="fas fa-file-excel"></i> تحميل Excel
         </button>
-        <button class="btn btn-info" onclick="printPayments()">
+        <button class="btn btn-info" onclick="printPayments()" style="font-size: 1em; font-weight: 600; padding: 12px 20px;">
           <i class="fas fa-print"></i> طباعة
         </button>
       </div>
 
       <!-- إحصائيات الدفعات -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; text-align: center;">
-          <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">💰 إجمالي المبالغ</p>
-          <p style="margin: 8px 0 0 0; font-size: 1.5em; font-weight: 700;">${formatCurrency(totalPayments)}</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 24px;">
+        <div style="background: #3B82F6; color: white; padding: 20px; border-radius: var(--radius-md); text-align: center;">
+          <p style="margin: 0; font-size: 1em; font-weight: 600; opacity: 0.95;">💰 إجمالي المبالغ</p>
+          <p style="margin: 10px 0 0 0; font-size: 1.7em; font-weight: 700;">${formatCurrency(totalPayments)}</p>
         </div>
-        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; border-radius: 8px; text-align: center;">
-          <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">✓ مدفوع (${paidPayments})</p>
-          <p style="margin: 8px 0 0 0; font-size: 1.5em; font-weight: 700;">${formatCurrency(data.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0))}</p>
+        <div style="background: #10B981; color: white; padding: 20px; border-radius: var(--radius-md); text-align: center;">
+          <p style="margin: 0; font-size: 1em; font-weight: 600; opacity: 0.95;">✓ مدفوع (${paidPayments})</p>
+          <p style="margin: 10px 0 0 0; font-size: 1.7em; font-weight: 700;">${formatCurrency(data.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0))}</p>
         </div>
-        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 15px; border-radius: 8px; text-align: center;">
-          <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">⏳ قيد الانتظار (${pendingPayments})</p>
-          <p style="margin: 8px 0 0 0; font-size: 1.5em; font-weight: 700;">${formatCurrency(data.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0))}</p>
+        <div style="background: #F59E0B; color: white; padding: 20px; border-radius: var(--radius-md); text-align: center;">
+          <p style="margin: 0; font-size: 1em; font-weight: 600; opacity: 0.95;">⏳ قيد الانتظار (${pendingPayments})</p>
+          <p style="margin: 10px 0 0 0; font-size: 1.7em; font-weight: 700;">${formatCurrency(data.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0))}</p>
         </div>
-        <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 15px; border-radius: 8px; text-align: center;">
-          <p style="margin: 0; font-size: 0.9em; opacity: 0.9;">✗ فشل (${failedPayments})</p>
-          <p style="margin: 8px 0 0 0; font-size: 1.5em; font-weight: 700;">${formatCurrency(data.filter(p => p.status === 'failed').reduce((sum, p) => sum + (p.amount || 0), 0))}</p>
+        <div style="background: #EF4444; color: white; padding: 20px; border-radius: var(--radius-md); text-align: center;">
+          <p style="margin: 0; font-size: 1em; font-weight: 600; opacity: 0.95;">✗ فشل (${failedPayments})</p>
+          <p style="margin: 10px 0 0 0; font-size: 1.7em; font-weight: 700;">${formatCurrency(data.filter(p => p.status === 'failed').reduce((sum, p) => sum + (p.amount || 0), 0))}</p>
         </div>
       </div>
 
       <!-- خانات البحث والتصفية -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+      <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
         <input 
           type="text" 
           id="paymentSearch" 
           placeholder="ابحث عن طالب أو كورس..." 
           class="search-input"
           onkeyup="filterPayments()"
-          style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;"
+          style="flex: 1; min-width: 200px; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1em; font-weight: 500;"
         >
         <select 
           id="paymentStatusFilter" 
           onchange="filterPayments()"
-          style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; background: white;"
+          style="padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; background: white; font-size: 1em; font-weight: 500;"
         >
           <option value="all">كل الحالات</option>
           <option value="paid">✓ مدفوع</option>
@@ -696,37 +737,37 @@ function renderPaymentsTable(data, container) {
       </div>
 
       <!-- جدول الدفعات -->
-      <table>
+      <table style="border-collapse: collapse; background: var(--bg-card); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 8px; overflow: hidden;">
         <thead>
-          <tr>
-            <th>#</th>
-            <th>👤 اسم الطالب</th>
-            <th>📖 اسم الكورس</th>
-            <th>💵 المبلغ</th>
-            <th>🔄 طريقة الدفع</th>
-            <th>📅 تاريخ الدفع</th>
-            <th>⚙️ الحالة</th>
-            <th>الإجراءات</th>
+          <tr style="background: #3B82F6;">
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">#</th>
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">👤 اسم الطالب</th>
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">📖 اسم الكورس</th>
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">💵 المبلغ</th>
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">🔄 طريقة الدفع</th>
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">📅 تاريخ الدفع</th>
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">⚙️ الحالة</th>
+            <th style="font-size: 1.05em; font-weight: 700; padding: 14px 16px; color: white; border: none;">الإجراءات</th>
           </tr>
         </thead>
         <tbody>
           ${data.map((payment, idx) => `
-            <tr>
-              <td>${idx + 1}</td>
-              <td>${escapeHtml(payment.student_name)}</td>
-              <td>${escapeHtml(payment.course_name)}</td>
-              <td style="font-weight: 600; color: #667eea;">${formatCurrency(payment.amount)}</td>
-              <td>${getPaymentMethodLabel(payment.payment_method)}</td>
-              <td>${formatDate(payment.payment_date)}</td>
-              <td>
-                <span class="status-badge" style="background-color: ${getPaymentStatusColor(payment.status)}33; color: ${getPaymentStatusColor(payment.status)}; border: 2px solid ${getPaymentStatusColor(payment.status)}; padding: 4px 8px; border-radius: 20px; font-weight: 600; font-size: 0.85em;">
+            <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.1); background: var(--bg-card);">
+              <td style="padding: 14px 16px; font-size: 1em; font-weight: 500; color: #CBD5E1;">${idx + 1}</td>
+              <td style="padding: 14px 16px; font-size: 1em; font-weight: 500; color: #F1F5F9;">${escapeHtml(payment.student_name)}</td>
+              <td style="padding: 14px 16px; font-size: 1em; font-weight: 500; color: #CBD5E1;">${escapeHtml(payment.course_name)}</td>
+              <td style="padding: 14px 16px; font-weight: 700; color: #3B82F6; font-size: 1.1em;">${formatCurrency(payment.amount)}</td>
+              <td style="padding: 14px 16px; font-size: 1em; font-weight: 500; color: #CBD5E1;">${getPaymentMethodLabel(payment.payment_method)}</td>
+              <td style="padding: 14px 16px; font-size: 1em; font-weight: 500; color: #CBD5E1;">${formatDate(payment.payment_date)}</td>
+              <td style="padding: 14px 16px;">
+                <span class="status-badge" style="background: ${payment.status === 'paid' ? 'rgba(16, 185, 129, 0.2)' : payment.status === 'pending' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; color: ${payment.status === 'paid' ? '#10B981' : payment.status === 'pending' ? '#F59E0B' : '#EF4444'}; border: 2px solid ${payment.status === 'paid' ? '#10B981' : payment.status === 'pending' ? '#F59E0B' : '#EF4444'}; padding: 8px 14px; border-radius: 20px; font-weight: 600; font-size: 0.9em;">
                   ${payment.status === 'paid' ? '✓ مدفوع' : payment.status === 'pending' ? '⏳ قيد الانتظار' : '✗ فشل'}
                 </span>
               </td>
-              <td>
-                <button class="action-btn" onclick="showPaymentDetails('${payment.id}')" style="background: #667eea; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">👁️ عرض</button>
-                <button class="action-btn" onclick="editPayment('${payment.id}')" style="background: #f59e0b; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; font-size: 0.85em;">✏️ تعديل</button>
-                <button class="action-btn" onclick="deletePayment('${payment.id}')" style="background: #ef4444; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; font-size: 0.85em;">🗑️ حذف</button>
+              <td style="padding: 14px 16px;">
+                <button class="action-btn" onclick="showPaymentDetails('${payment.id}')" style="background: #8B5CF6; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 600; margin-left: 5px;">👁️ عرض</button>
+                <button class="action-btn" onclick="editPayment('${payment.id}')" style="background: #F59E0B; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 600; margin-left: 5px;">✏️ تعديل</button>
+                <button class="action-btn" onclick="deletePayment('${payment.id}')" style="background: #EF4444; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 600;">🗑️ حذف</button>
               </td>
             </tr>
           `).join('')}
@@ -786,37 +827,49 @@ async function loadAttendance(forceRefresh = false) {
     let attendanceData = null;
     let error = null;
     
-    // محاولة 1: من جدول attendances
-    const { data: data1, error: error1 } = await window.supabaseClient
-      .from('attendances')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId)
-      .order('date', { ascending: false });
-    
-    if (!error1 && data1) {
-      attendanceData = data1;
-    } else {
-      // محاولة 2: من جدول attendance
-      const { data: data2, error: error2 } = await window.supabaseClient
-        .from('attendance')
+    // محاولة 1: من جدول attendances - استخدام select('*') لتجنب مشاكل الأعمدة
+    const result1 = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('attendances')
         .select('*')
         .eq('academy_id', window.currentAcademyId)
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1000),
+      'خطأ في تحميل الحضور',
+      false
+    );
+    
+    if (!result1.error && result1.data && result1.data.length > 0) {
+      attendanceData = result1.data;
+    } else if (result1.error && result1.error.code === '42P01') {
+      // Table doesn't exist, try attendance table
+      const result2 = await safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('attendance')
+          .select('*')
+          .eq('academy_id', window.currentAcademyId)
+          .order('created_at', { ascending: false })
+          .limit(1000),
+        'خطأ في تحميل الحضور',
+        false
+      );
       
-      if (!error2 && data2) {
-        attendanceData = data2;
+      if (!result2.error && result2.data) {
+        attendanceData = result2.data;
       } else {
-        error = error2 || error1;
+        error = result2.error || result1.error;
       }
+    } else {
+      error = result1.error;
     }
 
     if (error) {
       console.error('❌ Error loading attendance:', error);
       container.innerHTML = `
-        <div style="padding: 40px; text-align: center; color: #ef4444;">
+        <div style="padding: 40px; text-align: center; color: var(--danger);">
           <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
           <p style="font-size: 1.1rem;">خطأ في تحميل بيانات الحضور</p>
-          <p style="font-size: 0.9rem; color: #999;">${error.message}</p>
+          <p style="font-size: 0.9rem; color: var(--text-light);">${error.message}</p>
         </div>
       `;
       return;
@@ -830,20 +883,28 @@ async function loadAttendance(forceRefresh = false) {
     }
 
     // Get related data - using students instead of profiles
-    const { data: studentsData } = await window.supabaseClient
-      .from('students')
-      .select('id, full_name')
-      .eq('academy_id', window.currentAcademyId);
+    const { data: studentsData } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .select('id, full_name')
+        .eq('academy_id', window.currentAcademyId),
+      'خطأ في تحميل بيانات الطلاب',
+      false
+    );
 
-    const { data: coursesData } = await window.supabaseClient
-      .from('courses')
-      .select('id, name')
-      .eq('academy_id', window.currentAcademyId);
+    const { data: coursesData } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .select('id, name')
+        .eq('academy_id', window.currentAcademyId),
+      'خطأ في تحميل بيانات الكورسات',
+      false
+    );
 
     // Manual join - معالجة أسماء الحقول المختلفة
     const data = attendanceData.map(att => {
-      // التعامل مع أسماء الحقول المختلفة (date أو attendance_date)
-      const attendanceDate = att.date || att.attendance_date || att.att_date;
+      // التعامل مع أسماء الحقول المختلفة (date أو attendance_date أو created_at)
+      const attendanceDate = att.date || att.attendance_date || att.att_date || att.created_at;
       
       return {
         ...att,
@@ -871,10 +932,10 @@ async function loadAttendance(forceRefresh = false) {
     const container = document.getElementById('attendancesContainer');
     if (container) {
       container.innerHTML = `
-        <div style="padding: 40px; text-align: center; color: #ef4444;">
+        <div style="padding: 40px; text-align: center; color: var(--danger);">
           <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
           <p style="font-size: 1.1rem;">خطأ في تحميل بيانات الحضور</p>
-          <p style="font-size: 0.9rem; color: #999;">${error.message}</p>
+          <p style="font-size: 0.9rem; color: var(--text-light);">${error.message}</p>
         </div>
       `;
     }
@@ -892,10 +953,10 @@ function renderAttendanceTable(data, container) {
 
   if (!data || data.length === 0) {
     container.innerHTML = `
-      <div style="padding: 40px; text-align: center; color: #999;">
+      <div style="padding: 40px; text-align: center; color: var(--text-light);">
         <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
         <p style="font-size: 1.1rem;">لا توجد بيانات حضور</p>
-        <p style="font-size: 0.9rem; color: #bbb;">سيتم عرض بيانات الحضور المسجلة من قبل المعلمين هنا</p>
+        <p style="font-size: 0.9rem; color: var(--text-light);">سيتم عرض بيانات الحضور المسجلة من قبل المعلمين هنا</p>
       </div>
     `;
     return;
@@ -903,14 +964,14 @@ function renderAttendanceTable(data, container) {
 
   const html = `
     <div class="responsive-table-wrapper">
-      <table class="attendance-table">
+      <table class="attendance-table" style="background: var(--bg-card); border: 1px solid rgba(148, 163, 184, 0.1);">
         <thead>
-          <tr>
-            <th>👤 الطالب</th>
-            <th>📚 الكورس</th>
-            <th>📅 التاريخ</th>
-            <th>📊 الحالة</th>
-            <th>📝 ملاحظات</th>
+          <tr style="background: #3B82F6;">
+            <th style="color: white; border: none;">👤 الطالب</th>
+            <th style="color: white; border: none;">📚 الكورس</th>
+            <th style="color: white; border: none;">📅 التاريخ</th>
+            <th style="color: white; border: none;">📊 الحالة</th>
+            <th style="color: white; border: none;">📝 ملاحظات</th>
           </tr>
         </thead>
         <tbody>
@@ -918,14 +979,14 @@ function renderAttendanceTable(data, container) {
             const status = att.status || 'unknown';
             const attendanceDate = att.date || att.attendance_date || att.att_date || '-';
             return `
-              <tr>
-                <td class="td-student" data-label="الطالب">${escapeHtml(att.student_name || '-')}</td>
-                <td class="td-course" data-label="الكورس">${escapeHtml(att.course_name || '-')}</td>
-                <td class="td-date" data-label="التاريخ">${formatDate(attendanceDate)}</td>
+              <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.1); background: var(--bg-card);">
+                <td class="td-student" data-label="الطالب" style="color: #F1F5F9;">${escapeHtml(att.student_name || '-')}</td>
+                <td class="td-course" data-label="الكورس" style="color: #CBD5E1;">${escapeHtml(att.course_name || '-')}</td>
+                <td class="td-date" data-label="التاريخ" style="color: #CBD5E1;">${formatDate(attendanceDate)}</td>
                 <td class="td-status" data-label="الحالة">
                   <span class="status-badge ${status}">${getAttendanceStatusLabel(status)}</span>
                 </td>
-                <td class="td-notes" data-label="ملاحظات">${att.notes ? escapeHtml(att.notes) : '-'}</td>
+                <td class="td-notes" data-label="ملاحظات" style="color: #CBD5E1;">${att.notes ? escapeHtml(att.notes) : '-'}</td>
               </tr>
             `;
           }).join('')}

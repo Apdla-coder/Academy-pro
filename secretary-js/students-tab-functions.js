@@ -5,7 +5,14 @@
 async function loadStudentsTab() {
   try {
     console.log('📚 Loading students tab...');
-    await loadStudents();
+    // Force refresh when opening tab
+    await loadStudents(true);
+    
+    // Render immediately
+    const container = document.getElementById('studentsContainer');
+    if (container && typeof renderStudentsTable === 'function') {
+      renderStudentsTable(window.students || [], container);
+    }
   } catch (error) {
     console.error('❌ Error loading students tab:', error);
   }
@@ -86,22 +93,31 @@ async function showStudentDetails(studentId) {
     // جلب الاختبارات والدرجات للطالب
     let examScores = [];
     try {
-      const { data: scoresData, error: scoresError } = await window.supabaseClient
-        .from('exam_scores')
-        .select('*, exams(title, max_score, pass_score, date, course_id)')
-        .eq('student_id', studentId)
-        .eq('academy_id', window.currentAcademyId)
-        .order('exam_date', { ascending: false });
+      const { data: scoresData, error: scoresError } = await safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('exam_scores')
+          .select('*, exams(title, max_score, pass_score, date, course_id)')
+          .eq('student_id', studentId)
+          .eq('academy_id', window.currentAcademyId)
+          .order('exam_date', { ascending: false }),
+        'خطأ في تحميل درجات الاختبارات',
+        false
+      );
       
       if (!scoresError && scoresData && scoresData.length > 0) {
         // جلب بيانات الكورسات
         const courseIds = [...new Set(scoresData.map(s => s.exams?.course_id).filter(Boolean))];
-        const { data: coursesData } = courseIds.length > 0 
-          ? await window.supabaseClient
-              .from('courses')
-              .select('id, name')
-              .in('id', courseIds)
+        const result = courseIds.length > 0 
+          ? await safeSupabaseQuery(
+              () => window.supabaseClient
+                .from('courses')
+                .select('id, name')
+                .in('id', courseIds),
+              'خطأ في تحميل بيانات الكورسات',
+              false
+            )
           : { data: [] };
+        const coursesData = result.data || [];
         
         const coursesMap = new Map((coursesData || []).map(c => [c.id, c.name]));
         
@@ -154,181 +170,181 @@ async function showStudentDetails(studentId) {
     // عرض المعلومات في modal
     const detailsHTML = `
       <div class="student-details-modal">
-        <div class="details-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
-          <h2 style="margin: 0; font-size: 1.5em;">${escapeHtml(student.full_name)}</h2>
-          <p style="margin: 5px 0 0 0; opacity: 0.9;">تفاصيل شاملة</p>
+        <div class="details-header" style="background: #3B82F6; color: white; padding: 24px; border-radius: 8px 8px 0 0; margin-bottom: 24px;">
+          <h2 style="margin: 0; font-size: 1.6em; font-weight: 700;">${escapeHtml(student.full_name)}</h2>
+          <p style="margin: 8px 0 0 0; font-size: 1em; opacity: 0.95;">تفاصيل شاملة</p>
         </div>
 
-        <div style="padding: 20px;">
+        <div style="padding: 25px; background: var(--bg-card);">
           <!-- المعلومات الأساسية -->
           <div class="details-section">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📋 المعلومات الأساسية</h3>
-            <div class="details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">📋 المعلومات الأساسية</h3>
+            <div class="details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px;">
               <div>
-                <label style="color: #666; font-size: 0.9em;">البريد الإلكتروني:</label>
-                <p style="margin: 5px 0; font-weight: 500;">${escapeHtml(student.email || '-')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 6px; font-weight: 500;">البريد الإلكتروني:</label>
+                <p style="margin: 0; font-weight: 500; color: #F1F5F9;">${escapeHtml(student.email || '-')}</p>
               </div>
               <div>
-                <label style="color: #666; font-size: 0.9em;">رقم الهاتف:</label>
-                <p style="margin: 5px 0; font-weight: 500;">${escapeHtml(student.phone || '-')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 6px; font-weight: 500;">رقم الهاتف:</label>
+                <p style="margin: 0; font-weight: 500; color: #F1F5F9;">${escapeHtml(student.phone || '-')}</p>
               </div>
               <div>
-                <label style="color: #666; font-size: 0.9em;">تاريخ الميلاد:</label>
-                <p style="margin: 5px 0; font-weight: 500;">${formatDate(student.birthdate || '')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 6px; font-weight: 500;">تاريخ الميلاد:</label>
+                <p style="margin: 0; font-weight: 500; color: #F1F5F9;">${formatDate(student.birthdate || '')}</p>
               </div>
               <div>
-                <label style="color: #666; font-size: 0.9em;">العنوان:</label>
-                <p style="margin: 5px 0; font-weight: 500;">${escapeHtml(student.address || '-')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 6px; font-weight: 500;">العنوان:</label>
+                <p style="margin: 0; font-weight: 500; color: #F1F5F9;">${escapeHtml(student.address || '-')}</p>
               </div>
               <div>
-                <label style="color: #666; font-size: 0.9em;">اسم ولي الأمر:</label>
-                <p style="margin: 5px 0; font-weight: 500;">${escapeHtml(student.guardian_name || '-')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 6px; font-weight: 500;">اسم ولي الأمر:</label>
+                <p style="margin: 0; font-weight: 500; color: #F1F5F9;">${escapeHtml(student.guardian_name || '-')}</p>
               </div>
               <div>
-                <label style="color: #666; font-size: 0.9em;">هاتف ولي الأمر:</label>
-                <p style="margin: 5px 0; font-weight: 500;">${escapeHtml(student.guardian_phone || '-')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 6px; font-weight: 500;">هاتف ولي الأمر:</label>
+                <p style="margin: 0; font-weight: 500; color: #F1F5F9;">${escapeHtml(student.guardian_phone || '-')}</p>
               </div>
             </div>
             ${student.notes ? `
-              <div style="margin-top: 15px;">
-                <label style="color: #666; font-size: 0.9em;">ملاحظات:</label>
-                <p style="margin: 5px 0; font-weight: 500; background: #f5f7fa; padding: 10px; border-radius: 6px;">${escapeHtml(student.notes)}</p>
+              <div style="margin-top: 18px;">
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 8px; font-weight: 500;">ملاحظات:</label>
+                <p style="margin: 0; font-weight: 500; background: var(--bg-secondary); padding: 12px; border-radius: 8px; color: #CBD5E1; line-height: 1.6; border: 1px solid rgba(148, 163, 184, 0.1);">${escapeHtml(student.notes)}</p>
               </div>
             ` : ''}
           </div>
 
           <!-- الكورسات المشترك فيها -->
-          <div class="details-section" style="margin-top: 20px;">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📚 الكورسات المشترك فيها (${subscribedCourses.length})</h3>
+          <div class="details-section" style="margin-top: 25px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">📚 الكورسات المشترك فيها (${subscribedCourses.length})</h3>
             ${subscribedCourses.length > 0 ? `
-              <div style="margin-top: 15px;">
+              <div style="margin-top: 18px;">
                 ${subscribedCourses.map((course, idx) => `
-                  <div style="background: #f5f7fa; padding: 12px; margin-bottom: 10px; border-radius: 6px; border-right: 4px solid #667eea;">
+                  <div style="background: var(--bg-secondary); padding: 16px; margin-bottom: 12px; border-radius: 8px; border-right: 4px solid #3B82F6; border: 1px solid rgba(148, 163, 184, 0.1);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <div>
-                        <p style="margin: 0; font-weight: 600; color: #333;">${idx + 1}. ${escapeHtml(course.name)}</p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #666;">
+                        <p style="margin: 0; font-weight: 600; color: #F1F5F9; font-size: 1.05em;">${idx + 1}. ${escapeHtml(course.name)}</p>
+                        <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #CBD5E1;">
                           من: ${formatDate(course.startDate)} إلى: ${formatDate(course.endDate)}
                         </p>
                       </div>
-                      <span style="background: #667eea; color: white; padding: 5px 12px; border-radius: 20px; font-weight: 600;">${formatCurrency(course.price)}</span>
+                      <span style="background: #3B82F6; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.95em;">${formatCurrency(course.price)}</span>
                     </div>
                   </div>
                 `).join('')}
               </div>
-            ` : '<p style="margin-top: 10px; color: #999;">لا توجد اشتراكات</p>'}
+            ` : '<p style="margin-top: 10px; color: #94A3B8;">لا توجد اشتراكات</p>'}
           </div>
 
           <!-- الحالة المالية -->
-          <div class="details-section" style="margin-top: 20px;">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">💰 الحالة المالية</h3>
-            <div class="financial-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px;">
-              <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; text-align: center;">
-                <p style="margin: 0; color: #1976d2; font-size: 0.9em;">إجمالي المستحق</p>
-                <p style="margin: 8px 0 0 0; font-size: 1.5em; font-weight: 700; color: #1565c0;">${formatCurrency(totalCost)}</p>
+          <div class="details-section" style="margin-top: 25px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">💰 الحالة المالية</h3>
+            <div class="financial-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px;">
+              <div style="background: rgba(59, 130, 246, 0.1); padding: 18px; border-radius: 8px; text-align: center; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <p style="margin: 0; color: #3B82F6; font-size: 0.95em; font-weight: 600;">إجمالي المستحق</p>
+                <p style="margin: 10px 0 0 0; font-size: 1.6em; font-weight: 700; color: #1E3A8A;">${formatCurrency(totalCost)}</p>
               </div>
-              <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; text-align: center;">
-                <p style="margin: 0; color: #388e3c; font-size: 0.9em;">المدفوع</p>
-                <p style="margin: 8px 0 0 0; font-size: 1.5em; font-weight: 700; color: #2e7d32;">${formatCurrency(totalPaid)}</p>
+              <div style="background: rgba(16, 185, 129, 0.1); padding: 18px; border-radius: 8px; text-align: center; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <p style="margin: 0; color: #10B981; font-size: 0.95em; font-weight: 600;">المدفوع</p>
+                <p style="margin: 10px 0 0 0; font-size: 1.6em; font-weight: 700; color: #059669;">${formatCurrency(totalPaid)}</p>
               </div>
-              <div style="background: ${remaining > 0 ? '#fff3e0' : '#e8f5e9'}; padding: 15px; border-radius: 6px; text-align: center;">
-                <p style="margin: 0; color: ${remaining > 0 ? '#f57c00' : '#388e3c'}; font-size: 0.9em;">المتبقي</p>
-                <p style="margin: 8px 0 0 0; font-size: 1.5em; font-weight: 700; color: ${remaining > 0 ? '#e65100' : '#2e7d32'};">${formatCurrency(Math.max(0, remaining))}</p>
+              <div style="background: ${remaining > 0 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; padding: 18px; border-radius: 8px; text-align: center; border: 1px solid ${remaining > 0 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'};">
+                <p style="margin: 0; color: ${remaining > 0 ? '#F59E0B' : '#10B981'}; font-size: 0.95em; font-weight: 600;">المتبقي</p>
+                <p style="margin: 10px 0 0 0; font-size: 1.6em; font-weight: 700; color: ${remaining > 0 ? '#D97706' : '#059669'};">${formatCurrency(Math.max(0, remaining))}</p>
               </div>
             </div>
           </div>
 
           <!-- سجل الدفعات -->
-          <div class="details-section" style="margin-top: 20px;">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📊 سجل الدفعات (${payments.length})</h3>
+          <div class="details-section" style="margin-top: 25px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">📊 سجل الدفعات (${payments.length})</h3>
             ${payments.length > 0 ? `
-              <div style="margin-top: 15px; max-height: 250px; overflow-y: auto;">
+              <div style="margin-top: 18px; max-height: 250px; overflow-y: auto;">
                 ${payments.map((payment, idx) => `
-                  <div style="background: #f5f7fa; padding: 12px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                  <div style="background: var(--bg-secondary); padding: 14px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(148, 163, 184, 0.1);">
                     <div>
-                      <p style="margin: 0; font-weight: 600; color: #333;">الدفعة #${idx + 1}</p>
-                      <p style="margin: 3px 0 0 0; font-size: 0.85em; color: #666;">
+                      <p style="margin: 0; font-weight: 600; color: #F1F5F9; font-size: 1.05em;">الدفعة #${idx + 1}</p>
+                      <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #CBD5E1;">
                         ${formatDate(payment.payment_date)} - ${payment.method || 'غير محدد'}
                       </p>
                     </div>
-                    <span style="background: #4caf50; color: white; padding: 5px 12px; border-radius: 20px; font-weight: 600;">${formatCurrency(payment.amount)}</span>
+                    <span style="background: #10B981; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.95em;">${formatCurrency(payment.amount)}</span>
                   </div>
                 `).join('')}
               </div>
-            ` : '<p style="margin-top: 10px; color: #999;">لا توجد دفعات</p>'}
+            ` : '<p style="margin-top: 10px; color: #94A3B8;">لا توجد دفعات</p>'}
           </div>
 
           <!-- حضور وغياب -->
-          <div class="details-section" style="margin-top: 20px;">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📅 ملخص الحضور (${attendance.length})</h3>
+          <div class="details-section" style="margin-top: 25px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">📅 ملخص الحضور (${attendance.length})</h3>
             ${attendance.length > 0 ? `
-              <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; text-align: center;">
-                  <p style="margin: 0; color: #388e3c; font-size: 0.9em;">حاضر</p>
-                  <p style="margin: 8px 0 0 0; font-size: 1.3em; font-weight: 700; color: #2e7d32;">
+              <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 18px; border-radius: 8px; text-align: center; border: 1px solid rgba(16, 185, 129, 0.2);">
+                  <p style="margin: 0; color: #10B981; font-size: 0.95em; font-weight: 600;">حاضر</p>
+                  <p style="margin: 10px 0 0 0; font-size: 1.5em; font-weight: 700; color: #059669;">
                     ${attendance.filter(a => a.status === 'present').length}
                   </p>
                 </div>
-                <div style="background: #fff3e0; padding: 12px; border-radius: 6px; text-align: center;">
-                  <p style="margin: 0; color: #f57c00; font-size: 0.9em;">غائب</p>
-                  <p style="margin: 8px 0 0 0; font-size: 1.3em; font-weight: 700; color: #e65100;">
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 18px; border-radius: 8px; text-align: center; border: 1px solid rgba(239, 68, 68, 0.2);">
+                  <p style="margin: 0; color: #EF4444; font-size: 0.95em; font-weight: 600;">غائب</p>
+                  <p style="margin: 10px 0 0 0; font-size: 1.5em; font-weight: 700; color: #DC2626;">
                     ${attendance.filter(a => a.status === 'absent').length}
                   </p>
                 </div>
-                <div style="background: #f3e5f5; padding: 12px; border-radius: 6px; text-align: center;">
-                  <p style="margin: 0; color: #7b1fa2; font-size: 0.9em;">متأخر</p>
-                  <p style="margin: 8px 0 0 0; font-size: 1.3em; font-weight: 700; color: #6a1b9a;">
+                <div style="background: rgba(245, 158, 11, 0.1); padding: 18px; border-radius: 8px; text-align: center; border: 1px solid rgba(245, 158, 11, 0.2);">
+                  <p style="margin: 0; color: #F59E0B; font-size: 0.95em; font-weight: 600;">متأخر</p>
+                  <p style="margin: 10px 0 0 0; font-size: 1.5em; font-weight: 700; color: #D97706;">
                     ${attendance.filter(a => a.status === 'late').length}
                   </p>
                 </div>
               </div>
-            ` : '<p style="margin-top: 10px; color: #999;">لا توجد سجلات حضور</p>'}
+            ` : '<p style="margin-top: 10px; color: #94A3B8;">لا توجد سجلات حضور</p>'}
           </div>
 
           <!-- الاختبارات والدرجات -->
-          <div class="details-section" style="margin-top: 20px;">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📝 الاختبارات والدرجات (${examScores.length})</h3>
+          <div class="details-section" style="margin-top: 25px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">📝 الاختبارات والدرجات (${examScores.length})</h3>
             ${examScores.length > 0 ? `
-              <div style="margin-top: 15px; max-height: 300px; overflow-y: auto;">
+              <div style="margin-top: 18px; max-height: 300px; overflow-y: auto;">
                 ${examScores.map((exam, idx) => `
-                  <div style="background: ${exam.passed ? '#e8f5e9' : '#ffebee'}; padding: 15px; margin-bottom: 12px; border-radius: 8px; border-right: 4px solid ${exam.passed ? '#4caf50' : '#f44336'};">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                  <div style="background: ${exam.passed ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; padding: 18px; margin-bottom: 14px; border-radius: 8px; border-right: 4px solid ${exam.passed ? '#10B981' : '#EF4444'}; border: 1px solid ${exam.passed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'};">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                       <div style="flex: 1;">
-                        <p style="margin: 0; font-weight: 600; color: #333; font-size: 1.05em;">${escapeHtml(exam.exam_title)}</p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;">📚 ${escapeHtml(exam.course_name)}</p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #999;">📅 ${formatDate(exam.exam_date)}</p>
+                        <p style="margin: 0; font-weight: 600; color: #F1F5F9; font-size: 1.1em;">${escapeHtml(exam.exam_title)}</p>
+                        <p style="margin: 6px 0 0 0; font-size: 0.95em; color: #CBD5E1;">📚 ${escapeHtml(exam.course_name)}</p>
+                        <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #94A3B8;">📅 ${formatDate(exam.exam_date)}</p>
                       </div>
                       <div style="text-align: left; margin-left: 15px;">
-                        <span style="background: ${exam.passed ? '#4caf50' : '#f44336'}; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;">
+                        <span style="background: ${exam.passed ? '#10B981' : '#EF4444'}; color: white; padding: 8px 14px; border-radius: 20px; font-size: 0.9em; font-weight: 600;">
                           ${exam.passed ? '✓ ناجح' : '✗ راسب'}
                         </span>
                       </div>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
-                      <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
-                        <p style="margin: 0; font-size: 0.8em; color: #666;">الدرجة</p>
-                        <p style="margin: 5px 0 0 0; font-size: 1.2em; font-weight: 700; color: #667eea;">${exam.score} / ${exam.max_score}</p>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px;">
+                      <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(148, 163, 184, 0.1);">
+                        <p style="margin: 0; font-size: 0.85em; color: #CBD5E1; font-weight: 500;">الدرجة</p>
+                        <p style="margin: 6px 0 0 0; font-size: 1.3em; font-weight: 700; color: #3B82F6;">${exam.score} / ${exam.max_score}</p>
                       </div>
-                      <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
-                        <p style="margin: 0; font-size: 0.8em; color: #666;">النسبة</p>
-                        <p style="margin: 5px 0 0 0; font-size: 1.2em; font-weight: 700; color: #667eea;">${exam.percentage}%</p>
+                      <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(148, 163, 184, 0.1);">
+                        <p style="margin: 0; font-size: 0.85em; color: #CBD5E1; font-weight: 500;">النسبة</p>
+                        <p style="margin: 6px 0 0 0; font-size: 1.3em; font-weight: 700; color: #3B82F6;">${exam.percentage}%</p>
                       </div>
-                      <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
-                        <p style="margin: 0; font-size: 0.8em; color: #666;">درجة النجاح</p>
-                        <p style="margin: 5px 0 0 0; font-size: 1.2em; font-weight: 700; color: #667eea;">${exam.pass_score}</p>
+                      <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; text-align: center; border: 1px solid rgba(148, 163, 184, 0.1);">
+                        <p style="margin: 0; font-size: 0.85em; color: #CBD5E1; font-weight: 500;">درجة النجاح</p>
+                        <p style="margin: 6px 0 0 0; font-size: 1.3em; font-weight: 700; color: #3B82F6;">${exam.pass_score}</p>
                       </div>
                     </div>
                   </div>
                 `).join('')}
               </div>
-            ` : '<p style="margin-top: 10px; color: #999;">لا توجد اختبارات مسجلة</p>'}
+            ` : '<p style="margin-top: 10px; color: #94A3B8;">لا توجد اختبارات مسجلة</p>'}
           </div>
         </div>
 
-        <div style="padding: 20px; background: #f5f7fa; border-radius: 0 0 8px 8px; display: flex; gap: 10px; justify-content: flex-end;">
-          <button onclick="closeStudentDetails()" class="btn btn-secondary" style="padding: 8px 16px;">إغلاق</button>
-          <button onclick="showStudentQR('${student.id}')" class="btn" style="background: #9c27b0; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">📱 QR Code</button>
-          <button onclick="editStudent('${student.id}')" class="btn btn-primary" style="padding: 8px 16px;">تعديل البيانات</button>
+        <div style="padding: 20px; background: var(--bg-secondary); border-radius: 0 0 8px 8px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+          <button onclick="closeStudentDetails()" class="btn btn-secondary" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">إغلاق</button>
+          <button onclick="showStudentQR('${student.id}')" class="btn" style="background: #8B5CF6; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: 600;">📱 QR Code</button>
+          <button onclick="editStudent('${student.id}')" class="btn btn-primary" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">تعديل البيانات</button>
         </div>
       </div>
     `;
@@ -344,7 +360,7 @@ async function showStudentDetails(studentId) {
     }
 
     detailsModal.innerHTML = `
-      <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+      <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-lg), 0 0 30px rgba(59, 130, 246, 0.2); border: 1px solid rgba(148, 163, 184, 0.1);">
         ${detailsHTML}
       </div>
     `;

@@ -246,22 +246,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Load initial data - جميع البيانات الأساسية (في parallel لتقليل الوقت)
     console.log('🔄 Loading all data...');
+    showGlobalLoading('جاري تحميل البيانات...');
     
     // Disable realtime sync during initial load
     window.realtimeSyncEnabled = false;
     
-    // Load all data in parallel
-    await Promise.all([
-      loadCoursesData(),
-      loadStudentsData(),
-      loadSubscriptionsData(),
-      loadPaymentsData(),
-      loadAttendanceData(),
-      loadTeachers()
-    ]);
-    
-    await loadDashboardStats();
-    console.log('✅ All data loaded');
+    try {
+      // Load all data in parallel
+      await Promise.all([
+        loadCoursesData(),
+        loadStudentsData(),
+        loadSubscriptionsData(),
+        loadPaymentsData(),
+        loadAttendanceData(),
+        loadTeachers()
+      ]);
+      
+      await loadDashboardStats();
+      console.log('✅ All data loaded');
+    } finally {
+      hideGlobalLoading();
+    }
     
     // Setup UI and form listeners
     if (typeof setupFormEventListeners === 'function') {
@@ -298,10 +303,14 @@ async function loadCoursesData() {
       return;
     }
     
-    const { data, error } = await window.supabaseClient
-      .from('courses')
-      .select('*')
-      .eq('academy_id', academyId);
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .select('*')
+        .eq('academy_id', academyId),
+      'خطأ في تحميل الكورسات',
+      false // Don't show global loading for individual loads
+    );
     
     if (error) {
       console.error('❌ Error loading courses:', error.message);
@@ -320,10 +329,14 @@ async function loadStudentsData() {
   try {
     if (!window.currentAcademyId) return;
     
-    const { data, error } = await window.supabaseClient
-      .from('students')
-      .select('id, full_name, email, phone, address, birthdate, guardian_name, guardian_phone, notes')
-      .eq('academy_id', window.currentAcademyId);
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .select('id, full_name, email, phone, address, birthdate, guardian_name, guardian_phone, notes')
+        .eq('academy_id', window.currentAcademyId),
+      'خطأ في تحميل الطلاب',
+      false
+    );
     
     if (error) throw error;
     window.students = data || [];
@@ -337,29 +350,45 @@ async function loadDashboardStats() {
   try {
     if (!window.currentAcademyId) return;
     
-    const { count: studentsCount } = await window.supabaseClient
-      .from('students')
-      .select('id', { count: 'exact' })
-      .eq('academy_id', window.currentAcademyId);
+    const [studentsResult, coursesResult, subscriptionsResult] = await Promise.all([
+      safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('students')
+          .select('id', { count: 'exact', head: true })
+          .eq('academy_id', window.currentAcademyId),
+        'خطأ في تحميل إحصائيات الطلاب',
+        false
+      ),
+      safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('courses')
+          .select('id', { count: 'exact', head: true })
+          .eq('academy_id', window.currentAcademyId),
+        'خطأ في تحميل إحصائيات الكورسات',
+        false
+      ),
+      safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('subscriptions')
+          .select('id', { count: 'exact', head: true })
+          .eq('academy_id', window.currentAcademyId),
+        'خطأ في تحميل إحصائيات الاشتراكات',
+        false
+      )
+    ]);
     
-    const { count: coursesCount } = await window.supabaseClient
-      .from('courses')
-      .select('id', { count: 'exact' })
-      .eq('academy_id', window.currentAcademyId);
-
-    const { count: subscriptionsCount } = await window.supabaseClient
-      .from('subscriptions')
-      .select('id', { count: 'exact' })
-      .eq('academy_id', window.currentAcademyId);
+    const studentsCount = studentsResult.count || 0;
+    const coursesCount = coursesResult.count || 0;
+    const subscriptionsCount = subscriptionsResult.count || 0;
     
     if (document.getElementById('totalStudents')) {
-      document.getElementById('totalStudents').textContent = studentsCount || 0;
+      document.getElementById('totalStudents').textContent = studentsCount;
     }
     if (document.getElementById('totalCourses')) {
-      document.getElementById('totalCourses').textContent = coursesCount || 0;
+      document.getElementById('totalCourses').textContent = coursesCount;
     }
     if (document.getElementById('totalSubscriptions')) {
-      document.getElementById('totalSubscriptions').textContent = subscriptionsCount || 0;
+      document.getElementById('totalSubscriptions').textContent = subscriptionsCount;
     }
 
     console.log('✅ Dashboard stats updated:', { studentsCount, coursesCount, subscriptionsCount });
@@ -373,10 +402,14 @@ async function loadSubscriptionsData() {
   try {
     if (!window.currentAcademyId) return;
     
-    const { data, error } = await window.supabaseClient
-      .from('subscriptions')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId);
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('subscriptions')
+        .select('*')
+        .eq('academy_id', window.currentAcademyId),
+      'خطأ في تحميل الاشتراكات',
+      false
+    );
     
     if (error) throw error;
     window.subscriptions = data || [];
@@ -400,10 +433,14 @@ async function loadAttendanceData() {
   try {
     if (!window.currentAcademyId) return;
     
-    const { data, error } = await window.supabaseClient
-      .from('attendance')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId);
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('attendance')
+        .select('*')
+        .eq('academy_id', window.currentAcademyId),
+      'خطأ في تحميل الحضور',
+      false
+    );
     
     if (error) throw error;
     window.attendances = data || [];
@@ -434,43 +471,41 @@ function switchTab(tabName) {
   if (activeTab) {
     activeTab.style.display = 'block';
     
+    // Always refresh when switching tabs for fresh data
     if (tabName === 'dashboard') {
-      // Dashboard loads its own data with cache checking
+      // Dashboard loads its own data
       if (typeof loadDashboardData === 'function') {
         loadDashboardData();
       }
     }
     else if (tabName === 'students') {
-      // Only load if data is missing or stale
-      if (needsDataRefresh('students') && typeof loadStudents === 'function') {
-        loadStudents(false); // Use cache if available
-      }
-      // Render existing data immediately
-      if (window.students && window.students.length > 0) {
-        const container = document.getElementById('studentsContainer');
-        if (container && typeof renderStudentsTable === 'function') {
-          renderStudentsTable(window.students, container);
-        }
+      // Force refresh students tab
+      if (window.tabRefreshManager) {
+        window.tabRefreshManager.refreshTab('students');
       } else if (typeof loadStudentsTab === 'function') {
         loadStudentsTab();
+      } else if (typeof loadStudents === 'function') {
+        loadStudents(true); // Force refresh
       }
     }
     else if (tabName === 'courses') {
-      // Only load if data is missing or stale
-      if (needsDataRefresh('courses') && typeof loadCourses === 'function') {
-        loadCourses(false); // Use cache if available
-      }
-      if (typeof loadCoursesTab === 'function') {
+      // Force refresh courses tab
+      if (window.tabRefreshManager) {
+        window.tabRefreshManager.refreshTab('courses');
+      } else if (typeof loadCoursesTab === 'function') {
         loadCoursesTab();
+      } else if (typeof loadCourses === 'function') {
+        loadCourses(true); // Force refresh
       }
     }
     else if (tabName === 'subscriptions') {
-      // Only load if data is missing or stale
-      if (needsDataRefresh('subscriptions') && typeof loadSubscriptions === 'function') {
-        loadSubscriptions(false); // Use cache if available
-      }
-      if (typeof loadSubscriptionsTab === 'function') {
+      // Force refresh subscriptions tab
+      if (window.tabRefreshManager) {
+        window.tabRefreshManager.refreshTab('subscriptions');
+      } else if (typeof loadSubscriptionsTab === 'function') {
         loadSubscriptionsTab();
+      } else if (typeof loadSubscriptions === 'function') {
+        loadSubscriptions(true); // Force refresh
       } else {
         console.error('❌ loadSubscriptionsTab function not found!');
         const container = document.getElementById('subscriptionsContainer');
@@ -486,25 +521,30 @@ function switchTab(tabName) {
       }
     }
     else if (tabName === 'payments') {
-      // Only load if data is missing or stale
-      if (needsDataRefresh('payments') && typeof loadPayments === 'function') {
-        loadPayments(false); // Use cache if available
-      }
-      if (typeof loadPaymentsTab === 'function') {
+      // Force refresh payments tab
+      if (window.tabRefreshManager) {
+        window.tabRefreshManager.refreshTab('payments');
+      } else if (typeof loadPaymentsTab === 'function') {
         loadPaymentsTab();
+      } else if (typeof loadPayments === 'function') {
+        loadPayments(true); // Force refresh
       }
     }
     else if (tabName === 'attendances') {
-      // Only load if data is missing or stale
-      if (needsDataRefresh('attendances') && typeof loadAttendance === 'function') {
-        loadAttendance(false); // Use cache if available
-      }
-      if (typeof loadAttendancesTab === 'function') {
+      // Force refresh attendances tab
+      if (window.tabRefreshManager) {
+        window.tabRefreshManager.refreshTab('attendances');
+      } else if (typeof loadAttendancesTab === 'function') {
         loadAttendancesTab();
+      } else if (typeof loadAttendance === 'function') {
+        loadAttendance(true); // Force refresh
       }
     }
     else if (tabName === 'teacherExams') {
-      if (typeof loadTeacherExams === 'function') {
+      // Force refresh teacher exams tab
+      if (window.tabRefreshManager) {
+        window.tabRefreshManager.refreshTab('teacherExams');
+      } else if (typeof loadTeacherExams === 'function') {
         loadTeacherExams();
       }
     }
@@ -512,6 +552,72 @@ function switchTab(tabName) {
     console.error('❌ Tab content not found:', tabName);
   }
 }
+
+// Make switchTab globally available
+window.switchTab = switchTab;
+
+// === Global Loading Indicator ===
+function showGlobalLoading(message = 'جاري التحميل...') {
+  const indicator = document.getElementById('globalLoadingIndicator');
+  const messageEl = document.getElementById('loadingMessage');
+  if (indicator) {
+    if (messageEl) messageEl.textContent = message;
+    indicator.style.display = 'flex';
+  }
+}
+
+function hideGlobalLoading() {
+  const indicator = document.getElementById('globalLoadingIndicator');
+  if (indicator) {
+    indicator.style.display = 'none';
+  }
+}
+
+window.showGlobalLoading = showGlobalLoading;
+window.hideGlobalLoading = hideGlobalLoading;
+
+// === Safe Supabase Query Wrapper ===
+async function safeSupabaseQuery(queryFn, errorMessage = 'خطأ في الاستعلام', showLoading = true) {
+  try {
+    // Check if supabaseClient exists
+    if (!window.supabaseClient) {
+      console.error('❌ Supabase client not initialized');
+      showNotification('Supabase client غير مهيأ', 'error');
+      return { data: null, error: { message: 'Supabase client not initialized' } };
+    }
+
+    // Show loading if requested
+    if (showLoading) {
+      showGlobalLoading(errorMessage);
+    }
+
+    // Execute query
+    const result = await queryFn();
+    
+    // Hide loading
+    if (showLoading) {
+      hideGlobalLoading();
+    }
+
+    // Check for errors
+    if (result.error) {
+      console.error('❌ Query error:', result.error);
+      showNotification(errorMessage + ': ' + (result.error.message || 'خطأ غير معروف'), 'error');
+    }
+
+    return result;
+  } catch (error) {
+    // Hide loading on error
+    if (showLoading) {
+      hideGlobalLoading();
+    }
+    console.error('❌ Query exception:', error);
+    showNotification(errorMessage + ': ' + (error.message || 'خطأ غير معروف'), 'error');
+    return { data: null, error: error };
+  }
+}
+
+window.safeSupabaseQuery = safeSupabaseQuery;
 
 // === Utility Functions ===
 function formatCurrency(amount) {
@@ -619,18 +725,26 @@ async function loadStudents(forceRefresh = false) {
       return;
     }
 
-    const cache = window.dataCache.students;
-    const now = Date.now();
-    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
-      window.students = cache.data;
-      return;
+    // Skip cache check if force refresh is requested
+    if (!forceRefresh) {
+      const cache = window.dataCache.students;
+      const now = Date.now();
+      if (cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+        window.students = cache.data;
+        return;
+      }
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('students')
-      .select('id, full_name, email, phone, address, birthdate, guardian_name, guardian_phone, notes')
-      .eq('academy_id', window.currentAcademyId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .select('id, full_name, email, phone, address, birthdate, guardian_name, guardian_phone, notes, created_at')
+        .eq('academy_id', window.currentAcademyId)
+        .order('created_at', { ascending: false })
+        .limit(1000), // Limit for performance
+      'خطأ في تحميل الطلاب',
+      false
+    );
 
     if (error) throw error;
     
@@ -654,18 +768,26 @@ async function loadCourses(forceRefresh = false) {
       return;
     }
 
-    const cache = window.dataCache.courses;
-    const now = Date.now();
-    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
-      window.courses = cache.data;
-      return;
+    // Skip cache check if force refresh is requested
+    if (!forceRefresh) {
+      const cache = window.dataCache.courses;
+      const now = Date.now();
+      if (cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+        window.courses = cache.data;
+        return;
+      }
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('courses')
-      .select('id, course_name, description, price, duration_months, modules_count')
-      .eq('academy_id', window.currentAcademyId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .select('id, name, description, price, teacher_id, start_date, end_date, created_at, academy_id')
+        .eq('academy_id', window.currentAcademyId)
+        .order('created_at', { ascending: false })
+        .limit(500), // Limit for performance
+      'خطأ في تحميل الكورسات',
+      false
+    );
 
     if (error) throw error;
     
@@ -689,26 +811,35 @@ async function loadSubscriptions(forceRefresh = false) {
       return;
     }
 
-    const cache = window.dataCache.subscriptions;
-    const now = Date.now();
-    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
-      window.subscriptions = cache.data;
-      return;
+    // Skip cache check if force refresh is requested
+    if (!forceRefresh) {
+      const cache = window.dataCache.subscriptions;
+      const now = Date.now();
+      if (cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+        window.subscriptions = cache.data;
+        return;
+      }
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('subscriptions')
-      .select(`
-        id,
-        student_id,
-        course_id,
-        status,
-        subscribed_at,
-        students(full_name),
-        courses(name, price)
-      `)
-      .eq('academy_id', window.currentAcademyId)
-      .order('subscribed_at', { ascending: false });
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('subscriptions')
+        .select(`
+          id,
+          student_id,
+          course_id,
+          status,
+          subscribed_at,
+          created_at,
+          students(full_name),
+          courses(name, price)
+        `)
+        .eq('academy_id', window.currentAcademyId)
+        .order('subscribed_at', { ascending: false })
+        .limit(1000), // Limit for performance
+      'خطأ في تحميل الاشتراكات',
+      false
+    );
 
     if (error) throw error;
     
@@ -716,7 +847,7 @@ async function loadSubscriptions(forceRefresh = false) {
     const transformedData = (data || []).map(sub => ({
       ...sub,
       student_name: sub.students?.full_name || '-',
-      course_name: sub.courses?.name || '-',
+      course_name: sub.courses?.name || sub.courses?.course_name || '-',
       course_price: sub.courses?.price || 0,
       start_date: sub.subscribed_at,
       end_date: null
@@ -742,18 +873,26 @@ async function loadPayments(forceRefresh = false) {
       return;
     }
 
-    const cache = window.dataCache.payments;
-    const now = Date.now();
-    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
-      window.payments = cache.data;
-      return;
+    // Skip cache check if force refresh is requested
+    if (!forceRefresh) {
+      const cache = window.dataCache.payments;
+      const now = Date.now();
+      if (cache.data && (now - cache.timestamp) < CACHE_DURATION) {
+        window.payments = cache.data;
+        return;
+      }
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('payments')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId)
-      .order('payment_date', { ascending: false });
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('payments')
+        .select('id, student_id, course_id, amount, payment_method, payment_date, status, created_at, academy_id')
+        .eq('academy_id', window.currentAcademyId)
+        .order('payment_date', { ascending: false })
+        .limit(1000), // Limit for performance
+      'خطأ في تحميل المدفوعات',
+      false
+    );
 
     if (error) throw error;
     
@@ -777,18 +916,28 @@ async function loadAttendance(forceRefresh = false) {
       return;
     }
 
-    const cache = window.dataCache.attendances;
-    const now = Date.now();
-    if (!forceRefresh && cache.data && (now - cache.timestamp) < CACHE_DURATION) {
-      window.attendances = cache.data;
-      return;
+    // Skip cache check if force refresh is requested (shorter cache for attendance - 2 minutes)
+    const ATTENDANCE_CACHE = 2 * 60 * 1000; // 2 minutes
+    if (!forceRefresh) {
+      const cache = window.dataCache.attendances;
+      const now = Date.now();
+      if (cache.data && (now - cache.timestamp) < ATTENDANCE_CACHE) {
+        window.attendances = cache.data;
+        return;
+      }
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('attendance')
-      .select('*')
-      .eq('academy_id', window.currentAcademyId)
-      .order('attendance_date', { ascending: false });
+    // Use select('*') to avoid column name issues
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('attendance')
+        .select('*')
+        .eq('academy_id', window.currentAcademyId)
+        .order('created_at', { ascending: false })
+        .limit(1000),
+      'خطأ في تحميل الحضور',
+      false
+    );
 
     if (error) throw error;
     
@@ -819,11 +968,24 @@ async function loadTeachers(forceRefresh = false) {
 
     console.log('🔄 Fetching teachers...');
 
-    // Get all profiles and log them
-    const { data: allProfiles, error: allError } = await window.supabaseClient
+    const academyId = window.currentAcademyId || window.ACADEMY_ID || localStorage.getItem('current_academy_id');
+    
+    // Try to get teachers by academy_id first
+    let query = window.supabaseClient
       .from('profiles')
-      .select('*')
-      .limit(100);
+      .select('*');
+    
+    if (academyId) {
+      query = query.eq('academy_id', academyId);
+    }
+    
+    query = query.limit(100);
+
+    const { data: allProfiles, error: allError } = await safeSupabaseQuery(
+      () => query,
+      'خطأ في تحميل المعلمين',
+      false
+    );
 
     console.log('📊 ALL PROFILES IN DATABASE:', {
       count: allProfiles?.length || 0,

@@ -5,7 +5,8 @@
 async function loadAttendancesTab() {
   try {
     console.log('📌 Loading attendance tab...');
-    await loadAttendance();
+    // Force refresh when opening tab
+    await loadAttendance(true);
     
     // Render and update stats
     const container = document.getElementById('attendancesContainer');

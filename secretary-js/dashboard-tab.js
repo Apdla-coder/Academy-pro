@@ -851,30 +851,46 @@ async function loadRecentActivity() {
 
     // Get recent activities
     const [recentStudents, recentSubscriptions, recentPayments, recentAttendance] = await Promise.all([
-      window.supabaseClient
-        .from('students')
-        .select('id, full_name, created_at')
-        .eq('academy_id', academyId)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      window.supabaseClient
-        .from('subscriptions')
-        .select('id, student_id, course_id, created_at')
-        .eq('academy_id', academyId)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      window.supabaseClient
-        .from('payments')
-        .select('id, student_id, amount, created_at, status')
-        .eq('academy_id', academyId)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      window.supabaseClient
-        .from('attendances')
-        .select('id, student_id, status, date')
-        .eq('academy_id', academyId)
-        .order('date', { ascending: false })
-        .limit(5)
+      safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('students')
+          .select('id, full_name, created_at')
+          .eq('academy_id', academyId)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        'خطأ في تحميل آخر الطلاب',
+        false
+      ),
+      safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('subscriptions')
+          .select('id, student_id, course_id, created_at')
+          .eq('academy_id', academyId)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        'خطأ في تحميل آخر الاشتراكات',
+        false
+      ),
+      safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('payments')
+          .select('id, student_id, amount, created_at, status')
+          .eq('academy_id', academyId)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        'خطأ في تحميل آخر المدفوعات',
+        false
+      ),
+      safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('attendances')
+          .select('id, student_id, status, created_at')
+          .eq('academy_id', academyId)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        'خطأ في تحميل آخر الحضور',
+        false
+      )
     ]);
 
     // Combine and sort all activities
@@ -882,63 +898,84 @@ async function loadRecentActivity() {
 
     // Add recent students
     (recentStudents.data || []).forEach(student => {
-      activities.push({
-        type: 'student',
-        title: '📚 طالب جديد',
-        description: `تم تسجيل ${student.full_name}`,
-        time: new Date(student.created_at),
-        icon: '👤',
-        color: '#667eea'
-      });
+      if (student.created_at) {
+        const date = new Date(student.created_at);
+        if (!isNaN(date.getTime())) {
+          activities.push({
+            type: 'student',
+            title: '📚 طالب جديد',
+            description: `تم تسجيل ${student.full_name || 'طالب'}`,
+            time: date,
+            icon: '👤',
+            color: '#667eea'
+          });
+        }
+      }
     });
 
     // Add recent subscriptions
     (recentSubscriptions.data || []).forEach(sub => {
-      const student = window.students?.find(s => s.id === sub.student_id);
-      const course = window.courses?.find(c => c.id === sub.course_id);
-      activities.push({
-        type: 'subscription',
-        title: '📖 اشتراك جديد',
-        description: `${student?.full_name || 'طالب'} اشترك في ${course?.name || 'كورس'}`,
-        time: new Date(sub.created_at),
-        icon: '📝',
-        color: '#764ba2'
-      });
+      if (sub.created_at) {
+        const date = new Date(sub.created_at);
+        if (!isNaN(date.getTime())) {
+          const student = window.students?.find(s => s.id === sub.student_id);
+          const course = window.courses?.find(c => c.id === sub.course_id);
+          activities.push({
+            type: 'subscription',
+            title: '📖 اشتراك جديد',
+            description: `${student?.full_name || 'طالب'} اشترك في ${course?.name || course?.course_name || 'كورس'}`,
+            time: date,
+            icon: '📝',
+            color: '#764ba2'
+          });
+        }
+      }
     });
 
     // Add recent payments
     (recentPayments.data || []).forEach(payment => {
-      const student = window.students?.find(s => s.id === payment.student_id);
-      const statusText = payment.status === 'paid' ? '✅ مدفوع' : '⏳ معلق';
-      activities.push({
-        type: 'payment',
-        title: `💰 دفعة ${statusText}`,
-        description: `${student?.full_name || 'طالب'} دفع ${formatCurrency(payment.amount)}`,
-        time: new Date(payment.created_at),
-        icon: '💵',
-        color: '#10b981'
-      });
+      if (payment.created_at) {
+        const date = new Date(payment.created_at);
+        if (!isNaN(date.getTime())) {
+          const student = window.students?.find(s => s.id === payment.student_id);
+          const statusText = payment.status === 'paid' ? '✅ مدفوع' : '⏳ معلق';
+          activities.push({
+            type: 'payment',
+            title: `💰 دفعة ${statusText}`,
+            description: `${student?.full_name || 'طالب'} دفع ${formatCurrency(payment.amount || 0)}`,
+            time: date,
+            icon: '💵',
+            color: '#10b981'
+          });
+        }
+      }
     });
 
     // Add recent attendance
     (recentAttendance.data || []).forEach(att => {
-      const student = window.students?.find(s => s.id === att.student_id);
-      const statusConfig = {
-        'present': { label: '✓ حاضر', icon: '✅', color: '#10b981' },
-        'absent': { label: '✗ غائب', icon: '❌', color: '#ef4444' },
-        'late': { label: '⏰ متأخر', icon: '⏰', color: '#f59e0b' }
-      };
-      const config = statusConfig[att.status] || { label: att.status, icon: '📋', color: '#6b7280' };
-      const attendanceDate = att.date || att.attendance_date;
+      // Try different date fields
+      const attendanceDate = att.date || att.attendance_date || att.created_at;
+      if (attendanceDate) {
+        const date = new Date(attendanceDate);
+        if (!isNaN(date.getTime())) {
+          const student = window.students?.find(s => s.id === att.student_id);
+          const statusConfig = {
+            'present': { label: '✓ حاضر', icon: '✅', color: '#10b981' },
+            'absent': { label: '✗ غائب', icon: '❌', color: '#ef4444' },
+            'late': { label: '⏰ متأخر', icon: '⏰', color: '#f59e0b' }
+          };
+          const config = statusConfig[att.status] || { label: att.status || 'غير محدد', icon: '📋', color: '#6b7280' };
 
-      activities.push({
-        type: 'attendance',
-        title: `📊 حضور: ${config.label}`,
-        description: `${student?.full_name || 'طالب'} - ${formatDate(attendanceDate)}`,
-        time: new Date(attendanceDate),
-        icon: config.icon,
-        color: config.color
-      });
+          activities.push({
+            type: 'attendance',
+            title: `📊 حضور: ${config.label}`,
+            description: `${student?.full_name || 'طالب'} - ${formatDate(attendanceDate)}`,
+            time: date,
+            icon: config.icon,
+            color: config.color
+          });
+        }
+      }
     });
 
     // Sort by time (newest first)
@@ -1017,29 +1054,58 @@ function formatCurrency(value) {
  * Helper: Format date
  */
 function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString('ar-EG', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('ar-EG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.warn('⚠️ Error formatting date:', dateString, error);
+    return '-';
+  }
 }
 
 /**
  * Helper: Get relative time
  */
 function getRelativeTime(date) {
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+  if (!date) return '-';
+  
+  try {
+    // Convert to Date object if it's a string
+    const dateObj = date instanceof Date ? date : new Date(date);
+    
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.warn('⚠️ Invalid date:', date);
+      return '-';
+    }
+    
+    const now = new Date();
+    const diffMs = now - dateObj;
+    
+    // Check if date is in the future (shouldn't happen but handle it)
+    if (diffMs < 0) return 'قريباً';
+    
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'للتو';
-  if (diffMins < 60) return `قبل ${diffMins} دقيقة`;
-  if (diffHours < 24) return `قبل ${diffHours} ساعة`;
-  if (diffDays < 7) return `قبل ${diffDays} يوم`;
+    if (diffMins < 1) return 'للتو';
+    if (diffMins < 60) return `قبل ${diffMins} دقيقة`;
+    if (diffHours < 24) return `قبل ${diffHours} ساعة`;
+    if (diffDays < 7) return `قبل ${diffDays} يوم`;
 
-  return formatDate(date.toISOString());
+    // Use the date object directly instead of toISOString
+    return formatDate(dateObj);
+  } catch (error) {
+    console.warn('⚠️ Error in getRelativeTime:', date, error);
+    return '-';
+  }
 }
 
 /**

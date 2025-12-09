@@ -71,19 +71,23 @@ async function addStudent(e) {
       return;
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('students')
-      .insert([{
-        full_name: fullName,
-        email: email || null,
-        phone: phone || null,
-        address: address || null,
-        birthdate: birthdate || null,
-        guardian_name: guardianName || null,
-        guardian_phone: guardianPhone || null,
-        notes: notes || null,
-        academy_id: window.currentAcademyId
-      }]);
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .insert([{
+          full_name: fullName,
+          email: email || null,
+          phone: phone || null,
+          address: address || null,
+          birthdate: birthdate || null,
+          guardian_name: guardianName || null,
+          guardian_phone: guardianPhone || null,
+          notes: notes || null,
+          academy_id: window.currentAcademyId
+        }]),
+      'خطأ في إضافة الطالب',
+      true
+    );
 
     if (error) {
       console.error('❌ Insert error:', error);
@@ -99,7 +103,12 @@ async function addStudent(e) {
     closeModal('studentModal');
     window.realtimeSyncEnabled = false;
     clearDataCache('students');
-    await loadStudents(true); // force refresh
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('students');
+    } else {
+      await loadStudents(true); // fallback
+    }
     setTimeout(() => { 
       window.realtimeSyncEnabled = true;
     }, 500);
@@ -128,29 +137,38 @@ async function updateStudent() {
       return;
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('students')
-      .update({
-        full_name: fullName,
-        email: email || null,
-        phone: phone || null,
-        address: address || null,
-        birthdate: birthdate || null,
-        guardian_name: guardianName || null,
-        guardian_phone: guardianPhone || null,
-        notes: notes || null
-      })
-      .eq('id', currentStudentId);
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .update({
+          full_name: fullName,
+          email: email || null,
+          phone: phone || null,
+          address: address || null,
+          birthdate: birthdate || null,
+          guardian_name: guardianName || null,
+          guardian_phone: guardianPhone || null,
+          notes: notes || null
+        })
+        .eq('id', currentStudentId),
+      'خطأ في تحديث الطالب',
+      true
+    );
 
     if (error) throw error;
 
     showStatus('✅ تم تحديث بيانات الطالب', 'success');
     closeModal('studentModal');
     currentStudentId = null;
-    realtimeSyncEnabled = false; // Disable real-time sync
+    window.realtimeSyncEnabled = false; // Disable real-time sync
     clearDataCache('students');
-    await loadStudents(true); // force refresh
-    setTimeout(() => { realtimeSyncEnabled = true; }, 1500); // Re-enable after 1.5s
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('students');
+    } else {
+      await loadStudents(true); // fallback
+    }
+    setTimeout(() => { window.realtimeSyncEnabled = true; }, 1500); // Re-enable after 1.5s
   } catch (error) {
     console.error('❌ Error updating student:', error);
     showStatus('خطأ في تحديث الطالب', 'error');
@@ -161,18 +179,27 @@ async function deleteStudent(studentId) {
   if (!confirm('هل تريد حذف هذا الطالب؟')) return;
 
   try {
-    const { error } = await window.supabaseClient
-      .from('students')
-      .delete()
-      .eq('id', studentId);
+    const { error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('students')
+        .delete()
+        .eq('id', studentId),
+      'خطأ في حذف الطالب',
+      true
+    );
 
     if (error) throw error;
 
     showStatus('✅ تم حذف الطالب', 'success');
-    realtimeSyncEnabled = false; // Disable real-time sync
+    window.realtimeSyncEnabled = false; // Disable real-time sync
     clearDataCache('students');
-    await loadStudents(true); // force refresh
-    setTimeout(() => { realtimeSyncEnabled = true; }, 1500); // Re-enable after 1.5s
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('students');
+    } else {
+      await loadStudents(true); // fallback
+    }
+    setTimeout(() => { window.realtimeSyncEnabled = true; }, 1500); // Re-enable after 1.5s
   } catch (error) {
     console.error('❌ Error deleting student:', error);
     showStatus('خطأ في حذف الطالب', 'error');
@@ -276,18 +303,22 @@ async function addCourse(e) {
       return;
     }
 
-    const { data: courseData, error } = await window.supabaseClient
-      .from('courses')
-      .insert([{
-        name: name,
-        description: description,
-        price: parseFloat(price),
-        academy_id: window.currentAcademyId,
-        teacher_id: teacherId,
-        start_date: document.getElementById('startDate')?.value || null,
-        end_date: document.getElementById('endDate')?.value || null
-      }])
-      .select();
+    const { data: courseData, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .insert([{
+          name: name,
+          description: description,
+          price: parseFloat(price),
+          academy_id: window.currentAcademyId,
+          teacher_id: teacherId,
+          start_date: document.getElementById('startDate')?.value || null,
+          end_date: document.getElementById('endDate')?.value || null
+        }])
+        .select(),
+      'خطأ في إضافة الكورس',
+      true
+    );
 
     if (error) throw error;
 
@@ -325,15 +356,19 @@ async function updateCourse(courseId) {
       return;
     }
 
-    const { error } = await window.supabaseClient
-      .from('courses')
-      .update({
-        name: name,
-        description: description,
-        price: parseFloat(price),
-        teacher_id: teacherId
-      })
-      .eq('id', courseId);
+    const { error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .update({
+          name: name,
+          description: description,
+          price: parseFloat(price),
+          teacher_id: teacherId
+        })
+        .eq('id', courseId),
+      'خطأ في تحديث الكورس',
+      true
+    );
 
     if (error) throw error;
 
@@ -346,6 +381,10 @@ async function updateCourse(courseId) {
     } else {
       await loadCourses(true); // fallback if tabRefreshManager not available
     }
+    window.realtimeSyncEnabled = false;
+    setTimeout(() => { 
+      window.realtimeSyncEnabled = true;
+    }, 500);
   } catch (error) {
     console.error('❌ Error updating course:', error);
     showStatus('خطأ في تحديث الكورس', 'error');
@@ -356,16 +395,29 @@ async function deleteCourse(courseId) {
   if (!confirm('هل تريد حذف هذا الكورس؟')) return;
 
   try {
-    const { error } = await window.supabaseClient
-      .from('courses')
-      .delete()
-      .eq('id', courseId);
+    const { error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('courses')
+        .delete()
+        .eq('id', courseId),
+      'خطأ في حذف الكورس',
+      true
+    );
 
     if (error) throw error;
 
     showStatus('✅ تم حذف الكورس', 'success');
     clearDataCache('courses');
-    await loadCourses(true); // force refresh
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('courses');
+    } else {
+      await loadCourses(true); // fallback
+    }
+    window.realtimeSyncEnabled = false;
+    setTimeout(() => { 
+      window.realtimeSyncEnabled = true;
+    }, 500);
   } catch (error) {
     console.error('❌ Error deleting course:', error);
     showStatus('خطأ في حذف الكورس', 'error');
@@ -491,31 +543,39 @@ async function addSubscription(e) {
       return;
     }
 
-    const { data, error } = await window.supabaseClient
-      .from('subscriptions')
-      .insert([{
-        student_id: student.id,
-        course_id: courseId,
-        subscribed_at: startDate,
-        status: status,
-        academy_id: window.currentAcademyId
-      }]);
+    const { data, error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('subscriptions')
+        .insert([{
+          student_id: student.id,
+          course_id: courseId,
+          subscribed_at: startDate,
+          status: status,
+          academy_id: window.currentAcademyId
+        }]),
+      'خطأ في إضافة الاشتراك',
+      true
+    );
 
     if (error) throw error;
 
     // 📝 Only create payment record if amount is provided and greater than 0
     if (amountPaid && amountPaid > 0) {
-      const { error: paymentError } = await window.supabaseClient
-        .from('payments')
-        .insert([{
-          student_id: student.id,
-          course_id: courseId,
-          amount: amountPaid,
-          payment_method: 'cash',
-          payment_date: startDate,
-          status: 'paid',
-          academy_id: window.currentAcademyId
-        }]);
+      const { error: paymentError } = await safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('payments')
+          .insert([{
+            student_id: student.id,
+            course_id: courseId,
+            amount: amountPaid,
+            payment_method: 'cash',
+            payment_date: startDate,
+            status: 'paid',
+            academy_id: window.currentAcademyId
+          }]),
+        'خطأ في إضافة الدفعة',
+        false
+      );
 
       if (paymentError) {
         console.warn('⚠️ Warning: Could not create payment record:', paymentError);
@@ -529,9 +589,21 @@ async function addSubscription(e) {
     showStatus('✅ تم إضافة الاشتراك بنجاح', 'success');
     closeModal('subscriptionModal');
     clearDataCache('subscriptions');
-    await loadSubscriptions(true); // force refresh
     clearDataCache('payments');
-    await loadPayments(true); // force refresh
+    // Use tab refresh manager to trigger auto-refresh for affected tabs
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('subscriptions');
+      await window.tabRefreshManager.refreshTab('payments');
+      await window.tabRefreshManager.refreshTab('students'); // Refresh students tab to update subscription counts
+      await window.tabRefreshManager.refreshTab('courses'); // Refresh courses tab to update student counts
+    } else {
+      await loadSubscriptions(true); // fallback
+      await loadPayments(true); // fallback
+    }
+    window.realtimeSyncEnabled = false;
+    setTimeout(() => { 
+      window.realtimeSyncEnabled = true;
+    }, 500);
   } catch (error) {
     console.error('❌ Error adding subscription:', error);
     showStatus('خطأ في إضافة الاشتراك: ' + error.message, 'error');
@@ -581,13 +653,17 @@ async function updateSubscription() {
     const startDate = document.getElementById('subscriptionDate')?.value;
     const status = document.getElementById('subscriptionStatus')?.value;
 
-    const { error } = await window.supabaseClient
-      .from('subscriptions')
-      .update({
-        subscribed_at: startDate,
-        status: status
-      })
-      .eq('id', currentSubscriptionId);
+    const { error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('subscriptions')
+        .update({
+          subscribed_at: startDate,
+          status: status
+        })
+        .eq('id', currentSubscriptionId),
+      'خطأ في تحديث الاشتراك',
+      true
+    );
 
     if (error) throw error;
 
@@ -595,7 +671,20 @@ async function updateSubscription() {
     closeModal('subscriptionModal');
     currentSubscriptionId = null;
     clearDataCache('subscriptions');
-    await loadSubscriptions(true); // force refresh
+    clearDataCache('payments');
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('subscriptions');
+      await window.tabRefreshManager.refreshTab('payments');
+      await window.tabRefreshManager.refreshTab('students'); // Refresh students tab
+      await window.tabRefreshManager.refreshTab('courses'); // Refresh courses tab
+    } else {
+      await loadSubscriptions(true); // fallback
+    }
+    window.realtimeSyncEnabled = false;
+    setTimeout(() => { 
+      window.realtimeSyncEnabled = true;
+    }, 500);
   } catch (error) {
     console.error('❌ Error updating subscription:', error);
     showStatus('خطأ في تحديث الاشتراك', 'error');
@@ -606,16 +695,33 @@ async function deleteSubscription(subscriptionId) {
   if (!confirm('هل تريد حذف هذا الاشتراك؟')) return;
 
   try {
-    const { error } = await window.supabaseClient
-      .from('subscriptions')
-      .delete()
-      .eq('id', subscriptionId);
+    const { error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('subscriptions')
+        .delete()
+        .eq('id', subscriptionId),
+      'خطأ في حذف الاشتراك',
+      true
+    );
 
     if (error) throw error;
 
     showStatus('✅ تم حذف الاشتراك', 'success');
     clearDataCache('subscriptions');
-    await loadSubscriptions(true); // force refresh
+    clearDataCache('payments');
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('subscriptions');
+      await window.tabRefreshManager.refreshTab('payments');
+      await window.tabRefreshManager.refreshTab('students'); // Refresh students tab
+      await window.tabRefreshManager.refreshTab('courses'); // Refresh courses tab
+    } else {
+      await loadSubscriptions(true); // fallback
+    }
+    window.realtimeSyncEnabled = false;
+    setTimeout(() => { 
+      window.realtimeSyncEnabled = true;
+    }, 500);
   } catch (error) {
     console.error('❌ Error deleting subscription:', error);
     showStatus('خطأ في حذف الاشتراك', 'error');
@@ -750,17 +856,21 @@ async function addPayment(e) {
     // Check if we're editing or adding
     if (currentPaymentId) {
       // Update existing payment
-      const { error } = await window.supabaseClient
-        .from('payments')
-        .update({
-          student_id: studentId,
-          course_id: courseId,
-          amount: parseFloat(amount),
-          payment_method: method,
-          payment_date: paidAt,
-          status: status
-        })
-        .eq('id', currentPaymentId);
+      const { error } = await safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('payments')
+          .update({
+            student_id: studentId,
+            course_id: courseId,
+            amount: parseFloat(amount),
+            payment_method: method,
+            payment_date: paidAt,
+            status: status
+          })
+          .eq('id', currentPaymentId),
+        'خطأ في تحديث الدفعة',
+        true
+      );
 
       if (error) throw error;
       showStatus('✅ تم تحديث الدفعة بنجاح', 'success');
@@ -774,18 +884,22 @@ async function addPayment(e) {
       }
     } else {
       // Insert new payment
-      const { data, error } = await window.supabaseClient
-        .from('payments')
-        .insert([{
-          student_id: studentId,
-          course_id: courseId,
-          amount: parseFloat(amount),
-          payment_method: method,
-          payment_date: paidAt,
-          status: status,
-          academy_id: window.currentAcademyId
-        }])
-        .select();
+      const { data, error } = await safeSupabaseQuery(
+        () => window.supabaseClient
+          .from('payments')
+          .insert([{
+            student_id: studentId,
+            course_id: courseId,
+            amount: parseFloat(amount),
+            payment_method: method,
+            payment_date: paidAt,
+            status: status,
+            academy_id: window.currentAcademyId
+          }])
+          .select(),
+        'خطأ في إضافة الدفعة',
+        true
+      );
 
       if (error) throw error;
       showStatus('✅ تم إضافة الدفعة بنجاح', 'success');
@@ -818,9 +932,13 @@ async function addPayment(e) {
     window.realtimeSyncEnabled = false;
     
     clearDataCache('payments');
-    // Use tab refresh manager to trigger auto-refresh
+    clearDataCache('subscriptions');
+    // Use tab refresh manager to trigger auto-refresh for affected tabs
     if (window.tabRefreshManager) {
       await window.tabRefreshManager.refreshTab('payments');
+      await window.tabRefreshManager.refreshTab('subscriptions'); // Refresh subscriptions to update payment status
+      await window.tabRefreshManager.refreshTab('students'); // Refresh students tab to update payment info
+      await window.tabRefreshManager.refreshTab('courses'); // Refresh courses tab to update revenue
     } else {
       await loadPayments(true); // fallback if tabRefreshManager not available
     }
@@ -876,10 +994,14 @@ async function deletePayment(paymentId) {
   if (!confirm('هل تريد حذف هذه الدفعة؟')) return;
 
   try {
-    const { error } = await window.supabaseClient
-      .from('payments')
-      .delete()
-      .eq('id', paymentId);
+    const { error } = await safeSupabaseQuery(
+      () => window.supabaseClient
+        .from('payments')
+        .delete()
+        .eq('id', paymentId),
+      'خطأ في حذف الدفعة',
+      true
+    );
 
     if (error) throw error;
 
@@ -890,7 +1012,16 @@ async function deletePayment(paymentId) {
     window.realtimeSyncEnabled = false;
     
     clearDataCache('payments');
-    await loadPayments(true); // force refresh
+    clearDataCache('subscriptions');
+    // Use tab refresh manager to trigger auto-refresh
+    if (window.tabRefreshManager) {
+      await window.tabRefreshManager.refreshTab('payments');
+      await window.tabRefreshManager.refreshTab('subscriptions'); // Refresh subscriptions
+      await window.tabRefreshManager.refreshTab('students'); // Refresh students tab
+      await window.tabRefreshManager.refreshTab('courses'); // Refresh courses tab
+    } else {
+      await loadPayments(true); // fallback
+    }
     
     // Re-enable realtime sync after a short delay
     setTimeout(() => {

@@ -31,11 +31,12 @@ function registerTabRefreshFunctions() {
       
       const container = document.getElementById('coursesContainer');
       if (container) {
-        renderCoursesTable(window.courses || [], container);
+        const coursesData = window.courses || [];
+        renderCoursesTable(coursesData, container);
+        
+        // تحديث الإحصائيات - تمرير البيانات بشكل صريح
+        updateCoursesStats(coursesData);
       }
-      
-      // تحديث الإحصائيات
-      updateCoursesStats();
       window.perfMonitor.end('refresh_courses');
     } catch (error) {
       console.error('❌ خطأ في تحديث الكورسات:', error);
@@ -81,15 +82,15 @@ function registerTabRefreshFunctions() {
     try {
       window.perfMonitor.start('refresh_attendances');
       clearDataCache('attendances');
-      await loadAttendances();
+      await loadAttendance(); // Use loadAttendance instead of loadAttendances
       
       const container = document.getElementById('attendancesContainer');
-      if (container) {
-        renderAttendancesTable(window.attendances || [], container);
+      if (container && typeof renderAttendanceTable === 'function') {
+        renderAttendanceTable(window.attendances || [], container);
+        if (typeof updateAttendanceStats === 'function') {
+          updateAttendanceStats(window.attendances || []);
+        }
       }
-      
-      // تحديث إحصائيات الحضور
-      updateAttendanceStats();
       window.perfMonitor.end('refresh_attendances');
     } catch (error) {
       console.error('❌ خطأ في تحديث الحضور:', error);
@@ -101,12 +102,8 @@ function registerTabRefreshFunctions() {
     try {
       window.perfMonitor.start('refresh_exams');
       clearDataCache('exams');
+      // loadTeacherExams() already calls renderTeacherExams() internally
       await loadTeacherExams();
-      
-      const container = document.getElementById('teacherExamsContainer');
-      if (container) {
-        renderTeacherExamsTable(window.exams || [], container);
-      }
       window.perfMonitor.end('refresh_exams');
     } catch (error) {
       console.error('❌ خطأ في تحديث الاختبارات:', error);

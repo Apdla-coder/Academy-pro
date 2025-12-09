@@ -20,6 +20,7 @@ async function loadSubscriptionsTab() {
     `;
     
     console.log('🔄 Loading data...');
+    // Force refresh all related data
     await Promise.all([
       loadSubscriptions(true),
       loadStudents(true),
@@ -116,44 +117,44 @@ function renderSubscriptionsTable(data, container) {
 
     html += `
       <div class="summary-cards">
-        <div class="summary-card" style="background: #e3f2fd;">
-          <p>إجمالي الاشتراكات</p>
+        <div class="summary-card" style="background: #3B82F6; color: white;">
+          <p style="opacity: 0.95;">إجمالي الاشتراكات</p>
           <div class="value">${data.length}</div>
         </div>
-        <div class="summary-card" style="background: #e8f5e9;">
-          <p>✓ الاشتراكات النشطة</p>
+        <div class="summary-card" style="background: #10B981; color: white;">
+          <p style="opacity: 0.95;">✓ الاشتراكات النشطة</p>
           <div class="value">${activeCount}</div>
         </div>
-        <div class="summary-card" style="background: #ffebee;">
-          <p>✗ المنتهية</p>
+        <div class="summary-card" style="background: #EF4444; color: white;">
+          <p style="opacity: 0.95;">✗ المنتهية</p>
           <div class="value">${inactiveCount}</div>
         </div>
       </div>
 
       <div class="table-responsive">
-        <table>
+        <table style="background: var(--bg-card); border: 1px solid rgba(148, 163, 184, 0.1);">
           <thead>
-            <tr>
-              <th>👤 الطالب</th>
-              <th>📖 الكورس</th>
-              <th>💰 السعر</th>
-              <th>📅 التاريخ</th>
-              <th>الحالة</th>
-              <th>الإجراءات</th>
+            <tr style="background: #3B82F6;">
+              <th style="color: white; border: none;">👤 الطالب</th>
+              <th style="color: white; border: none;">📖 الكورس</th>
+              <th style="color: white; border: none;">💰 السعر</th>
+              <th style="color: white; border: none;">📅 التاريخ</th>
+              <th style="color: white; border: none;">الحالة</th>
+              <th style="color: white; border: none;">الإجراءات</th>
             </tr>
           </thead>
           <tbody>
             ${data.map((sub, idx) => `
-              <tr>
-                <td data-label="الطالب">${escapeHtml(sub.student_name || '-')}</td>
-                <td data-label="الكورس">${escapeHtml(sub.course_name || '-')}</td>
-                <td data-label="السعر">${formatCurrency(sub.course_price || 0)}</td>
-                <td data-label="التاريخ">${formatDate(sub.subscribed_at)}</td>
+              <tr style="border-bottom: 1px solid rgba(148, 163, 184, 0.1); background: var(--bg-card);">
+                <td data-label="الطالب" style="color: #F1F5F9;">${escapeHtml(sub.student_name || '-')}</td>
+                <td data-label="الكورس" style="color: #CBD5E1;">${escapeHtml(sub.course_name || '-')}</td>
+                <td data-label="السعر" style="color: #3B82F6; font-weight: 600;">${formatCurrency(sub.course_price || 0)}</td>
+                <td data-label="التاريخ" style="color: #CBD5E1;">${formatDate(sub.subscribed_at)}</td>
                 <td data-label="الحالة"><span class="status-badge ${sub.status === 'active' ? 'active' : 'inactive'}">${sub.status === 'active' ? '✓ نشط' : '✗ منتهي'}</span></td>
                 <td data-label="الإجراءات">
-                  <button class="action-btn view-btn" onclick="showSubscriptionDetails('${sub.id}')">📋</button>
-                  <button class="action-btn edit-btn" onclick="editSubscription('${sub.id}')">✏️</button>
-                  <button class="action-btn delete-btn" onclick="deleteSubscription('${sub.id}')">🗑️</button>
+                  <button class="action-btn view-btn" onclick="showSubscriptionDetails('${sub.id}')" style="background: #8B5CF6; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; margin-left: 4px; font-weight: 600;">📋</button>
+                  <button class="action-btn edit-btn" onclick="editSubscription('${sub.id}')" style="background: #F59E0B; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; margin-left: 4px; font-weight: 600;">✏️</button>
+                  <button class="action-btn delete-btn" onclick="deleteSubscription('${sub.id}')" style="background: #EF4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 600;">🗑️</button>
                 </td>
               </tr>
             `).join('')}
@@ -196,66 +197,66 @@ function showSubscriptionDetails(subscriptionId) {
 
     const detailsHTML = `
       <div class="subscription-details-modal">
-        <div class="details-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
-          <h2 style="margin: 0; font-size: 1.5em;">تفاصيل الاشتراك</h2>
-          <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.9em;">معلومات الاشتراك الكاملة</p>
+        <div class="details-header" style="background: #3B82F6; color: white; padding: 24px; border-radius: 8px 8px 0 0; margin-bottom: 24px;">
+          <h2 style="margin: 0; font-size: 1.6em; font-weight: 700;">تفاصيل الاشتراك</h2>
+          <p style="margin: 10px 0 0 0; font-size: 1em; opacity: 0.95;">معلومات الاشتراك الكاملة</p>
         </div>
 
-        <div style="padding: 20px;">
+        <div style="padding: 25px; background: var(--bg-card);">
           <div class="details-section">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📚 معلومات الاشتراك</h3>
-            <div class="details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">📚 معلومات الاشتراك</h3>
+            <div class="details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px;">
               <div>
-                <label style="color: #666; font-size: 0.9em; display: block; margin-bottom: 5px;">👤 اسم الطالب:</label>
-                <p style="margin: 0; font-weight: 600; font-size: 1.1em; color: #333;">${escapeHtml(subscription.student_name || '-')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 8px; font-weight: 500;">👤 اسم الطالب:</label>
+                <p style="margin: 0; font-weight: 600; font-size: 1.1em; color: #F1F5F9;">${escapeHtml(subscription.student_name || '-')}</p>
               </div>
               <div>
-                <label style="color: #666; font-size: 0.9em; display: block; margin-bottom: 5px;">📖 اسم الكورس:</label>
-                <p style="margin: 0; font-weight: 600; font-size: 1.1em; color: #333;">${escapeHtml(subscription.course_name || '-')}</p>
+                <label style="color: #CBD5E1; font-size: 1em; display: block; margin-bottom: 8px; font-weight: 500;">📖 اسم الكورس:</label>
+                <p style="margin: 0; font-weight: 600; font-size: 1.1em; color: #F1F5F9;">${escapeHtml(subscription.course_name || '-')}</p>
               </div>
             </div>
           </div>
 
-          <div class="details-section" style="margin-top: 20px;">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">📅 تاريخ والسعر</h3>
-            <div class="details-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px;">
-              <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; text-align: center;">
-                <p style="margin: 0; color: #1976d2; font-size: 0.85em;">📆 تاريخ الاشتراك</p>
-                <p style="margin: 8px 0 0 0; font-weight: 700; color: #1565c0; font-size: 1.05em;">${formatDate(subscription.subscribed_at)}</p>
+          <div class="details-section" style="margin-top: 25px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">📅 تاريخ والسعر</h3>
+            <div class="details-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 18px;">
+              <div style="background: rgba(59, 130, 246, 0.1); padding: 18px; border-radius: 8px; text-align: center; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <p style="margin: 0; color: #3B82F6; font-size: 0.9em; font-weight: 600;">📆 تاريخ الاشتراك</p>
+                <p style="margin: 10px 0 0 0; font-weight: 700; color: #1E3A8A; font-size: 1.1em;">${formatDate(subscription.subscribed_at)}</p>
               </div>
-              <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; text-align: center;">
-                <p style="margin: 0; color: #388e3c; font-size: 0.85em;">💰 سعر الكورس</p>
-                <p style="margin: 8px 0 0 0; font-weight: 700; color: #2e7d32; font-size: 1.05em;">${formatCurrency(subscription.course_price || 0)}</p>
+              <div style="background: rgba(16, 185, 129, 0.1); padding: 18px; border-radius: 8px; text-align: center; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <p style="margin: 0; color: #10B981; font-size: 0.9em; font-weight: 600;">💰 سعر الكورس</p>
+                <p style="margin: 10px 0 0 0; font-weight: 700; color: #059669; font-size: 1.1em;">${formatCurrency(subscription.course_price || 0)}</p>
               </div>
             </div>
           </div>
 
-          <div class="details-section" style="margin-top: 20px;">
-            <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">⚙️ حالة الاشتراك</h3>
-            <div style="margin-top: 15px;">
-              <span style="display: inline-block; padding: 10px 16px; border-radius: 20px; font-weight: 600; font-size: 1.05em; ${
+          <div class="details-section" style="margin-top: 25px;">
+            <h3 style="color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px; font-size: 1.3em; font-weight: 700;">⚙️ حالة الاشتراك</h3>
+            <div style="margin-top: 18px;">
+              <span style="display: inline-block; padding: 12px 20px; border-radius: 20px; font-weight: 600; font-size: 1.05em; ${
                 subscription.status === 'active' 
-                  ? 'background: #e8f5e9; color: #2e7d32;' 
-                  : 'background: #ffebee; color: #c62828;'
+                  ? 'background: rgba(16, 185, 129, 0.2); color: #10B981; border: 2px solid #10B981;' 
+                  : 'background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 2px solid #EF4444;'
               }">
                 ${subscription.status === 'active' ? '✓ نشط' : '✗ منتهي'}
               </span>
             </div>
           </div>
 
-          <div class="details-section" style="margin-top: 20px; padding: 12px; background: #f5f7fa; border-radius: 6px;">
-            <p style="margin: 0; color: #666; font-size: 0.85em;">
-              <strong>معرف الاشتراك:</strong> ${subscription.id}
+          <div class="details-section" style="margin-top: 25px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.1);">
+            <p style="margin: 0; color: #CBD5E1; font-size: 0.9em;">
+              <strong style="color: #F1F5F9;">معرف الاشتراك:</strong> <span style="color: #CBD5E1;">${subscription.id}</span>
             </p>
-            <p style="margin: 8px 0 0 0; color: #666; font-size: 0.85em;">
-              <strong>تاريخ الإنشاء:</strong> ${formatDate(subscription.created_at)}
+            <p style="margin: 10px 0 0 0; color: #CBD5E1; font-size: 0.9em;">
+              <strong style="color: #F1F5F9;">تاريخ الإنشاء:</strong> <span style="color: #CBD5E1;">${formatDate(subscription.created_at)}</span>
             </p>
           </div>
         </div>
 
-        <div style="padding: 20px; background: #f5f7fa; border-radius: 0 0 8px 8px; display: flex; gap: 10px; justify-content: flex-end;">
-          <button onclick="closeSubscriptionDetails()" class="btn btn-secondary" style="padding: 8px 16px;">إغلاق</button>
-          <button onclick="closeSubscriptionDetails(); editSubscription('${subscription.id}')" class="btn btn-primary" style="padding: 8px 16px;">تعديل</button>
+        <div style="padding: 20px; background: var(--bg-secondary); border-radius: 0 0 8px 8px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(148, 163, 184, 0.1);">
+          <button onclick="closeSubscriptionDetails()" class="btn btn-secondary" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">إغلاق</button>
+          <button onclick="closeSubscriptionDetails(); editSubscription('${subscription.id}')" class="btn btn-primary" style="padding: 12px 20px; font-size: 1em; font-weight: 600;">تعديل</button>
         </div>
       </div>
     `;
@@ -270,7 +271,7 @@ function showSubscriptionDetails(subscriptionId) {
     }
 
     detailsModal.innerHTML = `
-      <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+      <div class="modal-content" style="width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-lg), 0 0 30px rgba(59, 130, 246, 0.2); border: 1px solid rgba(148, 163, 184, 0.1);">
         ${detailsHTML}
       </div>
     `;
