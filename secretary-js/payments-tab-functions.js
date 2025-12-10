@@ -264,6 +264,7 @@ function showStudentPaymentDetails(studentId, courseId) {
                     <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">💵 المبلغ</th>
                     <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">🔄 الطريقة</th>
                     <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">⚙️ الحالة</th>
+                    <th style="padding: 14px 18px; text-align: right; font-size: 1.05em; font-weight: 700; color: white; border: none;">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -276,6 +277,13 @@ function showStudentPaymentDetails(studentId, courseId) {
                         <span style="background: ${p.status === 'paid' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}; color: ${p.status === 'paid' ? '#10B981' : '#F59E0B'}; padding: 8px 16px; border-radius: 20px; font-size: 0.95em; font-weight: 600; border: 1px solid ${p.status === 'paid' ? '#10B981' : '#F59E0B'};">
                           ${p.status === 'paid' ? '✓ مدفوع' : '⏳ قيد الانتظار'}
                         </span>
+                      </td>
+                      <td style="padding: 14px 18px; text-align: right;">
+                        ${p.status === 'paid' ? `
+                          <button onclick="printPaymentReceipt('${p.id}')" class="btn btn-info" style="padding: 8px 16px; font-size: 0.95em; font-weight: 600; background: #3B82F6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-print"></i> طباعة الإيصال
+                          </button>
+                        ` : '<span style="color: #CBD5E1; font-size: 0.9em;">-</span>'}
                       </td>
                     </tr>
                   `).join('')}
@@ -900,11 +908,20 @@ function printPaymentReceipt(paymentId = null) {
     `);
     
     printWindow.document.close();
-    printWindow.focus();
     
-    setTimeout(() => {
+    // Print immediately
+    printWindow.onload = function() {
+      printWindow.focus();
       printWindow.print();
-    }, 250);
+    };
+    
+    // Fallback: print after a short delay if onload doesn't fire
+    setTimeout(function() {
+      if (printWindow && !printWindow.closed) {
+        printWindow.focus();
+        printWindow.print();
+      }
+    }, 300);
     
   } catch (error) {
     console.error('❌ Error printing receipt:', error);

@@ -30,7 +30,9 @@ window.dataCache = {
   subscriptions: { data: null, timestamp: 0, loading: false },
   payments: { data: null, timestamp: 0, loading: false },
   attendances: { data: null, timestamp: 0, loading: false },
-  teachers: { data: null, timestamp: 0, loading: false }
+  teachers: { data: null, timestamp: 0, loading: false },
+  treasury: { data: null, timestamp: 0, loading: false },
+  notifications: { data: null, timestamp: 0, loading: false }
 };
 
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -659,7 +661,13 @@ function showStatus(message, type = 'success') {
 
 // Enhanced notification system
 function showNotification(message, type = 'info', duration = 3000) {
-  const existing = document.querySelector('.notification');
+  const notificationContainer = document.getElementById('notificationContainer');
+  if (!notificationContainer) {
+    console.warn('Notification container not found');
+    return;
+  }
+
+  const existing = notificationContainer.querySelector('.notification');
   if (existing) existing.remove();
 
   const notification = document.createElement('div');
@@ -671,7 +679,7 @@ function showNotification(message, type = 'info', duration = 3000) {
     </div>
   `;
   
-  document.body.appendChild(notification);
+  notificationContainer.appendChild(notification);
   
   setTimeout(() => {
     if (notification.parentNode) {
@@ -683,10 +691,546 @@ function showNotification(message, type = 'info', duration = 3000) {
 
 window.showNotification = showNotification;
 
+// ============================================================================
+// REAL-TIME ADMIN ACTION NOTIFICATIONS
+// ============================================================================
+
+window.unreadNotificationCount = 0;
+let adminActionSubscriptions = [];
+
+console.log('✅ Notification system initialized - Count: 0');
+
+/**
+ * Initialize real-time listeners for admin actions
+ */
+function setupAdminActionListeners(academyId) {
+  if (!window.supabaseClient || !academyId) {
+    console.warn('⚠️ Supabase client or academy ID not available');
+    return;
+  }
+
+  // Clean up existing subscriptions
+  cleanupAdminActionListeners();
+
+  const tables = ['students', 'courses', 'payments', 'subscriptions', 'attendances', 'treasury_transactions', 'users'];
+  const actionEmojis = {
+    'students': '👥',
+    'courses': '📚',
+    'payments': '💰',
+    'subscriptions': '📋',
+    'attendances': '📅',
+    'treasury_transactions': '💳',
+    'users': '👤'
+  };
+
+  const actionMessages = {
+    'students': {
+      'INSERT': 'تم إضافة طالب جديد',
+      'UPDATE': 'تم تحديث بيانات طالب',
+      'DELETE': 'تم حذف طالب'
+    },
+    'courses': {
+      'INSERT': 'تم إضافة كورس جديد',
+      'UPDATE': 'تم تحديث الكورس',
+      'DELETE': 'تم حذف الكورس'
+    },
+    'payments': {
+      'INSERT': 'تم تسجيل دفعة جديدة',
+      'UPDATE': 'تم تحديث الدفعة',
+      'DELETE': 'تم حذف الدفعة'
+    },
+    'subscriptions': {
+      'INSERT': 'تم إضافة اشتراك جديد',
+      'UPDATE': 'تم تحديث الاشتراك',
+      'DELETE': 'تم حذف الاشتراك'
+    },
+    'attendances': {
+      'INSERT': 'تم تسجيل حضور',
+      'UPDATE': 'تم تحديث الحضور',
+      'DELETE': 'تم حذف الحضور'
+    },
+    'treasury_transactions': {
+      'INSERT': 'معاملة خزينة جديدة',
+      'UPDATE': 'تم تحديث المعاملة',
+      'DELETE': 'تم حذف المعاملة'
+    },
+    'users': {
+      'INSERT': 'مستخدم جديد تم إضافته',
+      'UPDATE': 'تم تحديث المستخدم',
+      'DELETE': 'تم حذف المستخدم'
+    }
+  };
+
+  tables.forEach(table => {
+    try {
+      const subscription = window.supabaseClient
+        .channel(`public:${table}`)
+        .on('postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: table,
+            filter: `academy_id=eq.${academyId}`
+          },
+          (payload) => {
+            handleAdminAction(payload, table, actionMessages, actionEmojis);
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`✅ Listening for ${table} changes`);
+          }
+        });
+
+      adminActionSubscriptions.push(subscription);
+    } catch (error) {
+      console.error(`❌ Error setting up listener for ${table}:`, error);
+    }
+  });
+
+  // Also listen to the notifications table for inserts so header bell shows notifications
+  try {
+    const userId = localStorage.getItem('user_id');
+    const notifSubscription = window.supabaseClient
+      .channel(`public:notifications`)
+      .on('postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `academy_id=eq.${academyId}`
+        },
+        (payload) => {
+          try {
+            const row = payload.new;
+            if (!row) return;
+            // If notification targets a specific user, ignore others
+            if (row.user_id && userId && row.user_id !== userId) return;
+
+            const emoji = row.type === 'withdrawal' ? '💳' : (row.type === 'danger' ? '⚠️' : '🔔');
+            if (window.addToNotificationHistory) window.addToNotificationHistory(emoji, row.title || row.message || 'إشعار جديد', row.created_at, row.id);
+            window.unreadNotificationCount = (window.unreadNotificationCount || 0) + 1;
+            if (window.updateNotificationBadge) window.updateNotificationBadge();
+            if (window.showAdminActionNotification) window.showAdminActionNotification(emoji, row.title || row.message || 'إشعار جديد', 'notification');
+          } catch (e) {
+            console.error('❌ Error handling notification insert payload', e);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') console.log('✅ Listening for notifications table inserts');
+      });
+
+    adminActionSubscriptions.push(notifSubscription);
+  } catch (err) {
+    console.error('❌ Error setting up notifications table realtime listener:', err);
+  }
+}
+
+/**
+ * Handle incoming admin actions and display notifications
+ */
+function handleAdminAction(payload, table, actionMessages, actionEmojis) {
+  const { eventType, new: newData, old: oldData } = payload;
+  
+  // Skip notifications for certain internal operations
+  if (payload.new?.is_system_update === true) {
+    return;
+  }
+
+  const message = actionMessages[table]?.[eventType] || `تم ${eventType} في ${table}`;
+  const emoji = actionEmojis[table] || '🔔';
+
+  // Increment unread count
+  window.unreadNotificationCount++;
+  console.log(`🔔 Notification count incremented to: ${window.unreadNotificationCount}`);
+  
+  updateNotificationBadge();
+
+  // Show transient notification
+  showAdminActionNotification(emoji, message, table);
+
+  // Log admin action
+  console.log(`🔔 Admin Action: ${emoji} ${message}`, payload);
+}
+
+/**
+ * Display admin action notification with animation
+ */
+function showAdminActionNotification(emoji, message, table) {
+  const notificationContainer = document.getElementById('notificationContainer');
+  if (!notificationContainer) return;
+
+  const notification = document.createElement('div');
+  notification.className = 'notification notification-info admin-action-notification';
+  notification.style.fontSize = '0.85rem';
+  notification.style.padding = '8px 12px';
+  notification.innerHTML = `
+    <div class="notification-content" style="display: flex; align-items: center; gap: 5px;">
+      <span style="font-size: 1.1rem;">${emoji}</span>
+      <span>${message}</span>
+    </div>
+  `;
+
+  // Remove existing admin action notification
+  const existing = notificationContainer.querySelector('.admin-action-notification');
+  if (existing) existing.remove();
+
+  notificationContainer.appendChild(notification);
+
+  // Add to history
+  if (window.addToNotificationHistory) {
+    window.addToNotificationHistory(emoji, message);
+  }
+
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.style.animation = 'fadeOut 0.3s ease-out';
+      setTimeout(() => notification.remove(), 300);
+    }
+  }, 5000);
+}
+
+/**
+ * Update notification badge with count
+ */
+function updateNotificationBadge() {
+  const badge = document.getElementById('notificationBadge');
+  if (!badge) {
+    console.warn('⚠️ Badge element not found');
+    return;
+  }
+
+  console.log('📊 Badge update - Count:', window.unreadNotificationCount);
+  
+  if (window.unreadNotificationCount > 0) {
+    const displayText = window.unreadNotificationCount > 99 ? '99+' : window.unreadNotificationCount;
+    badge.textContent = displayText;
+    badge.classList.add('show');
+    badge.style.display = 'flex';
+    console.log('✅ Badge displayed:', displayText);
+  } else {
+    badge.classList.remove('show');
+    badge.style.display = 'none';
+    badge.textContent = '';
+    console.log('✅ Badge hidden');
+  }
+}
+
+/**
+ * Clear notification count and badge
+ */
+function clearNotificationCount() {
+  window.unreadNotificationCount = 0;
+  updateNotificationBadge();
+}
+
+/**
+ * Clean up all admin action listeners
+ */
+function cleanupAdminActionListeners() {
+  adminActionSubscriptions.forEach(subscription => {
+    try {
+      window.supabaseClient.removeChannel(subscription);
+    } catch (error) {
+      console.error('❌ Error removing subscription:', error);
+    }
+  });
+  adminActionSubscriptions = [];
+}
+
+// Set up listeners when app initializes
+window.setupAdminActionListeners = setupAdminActionListeners;
+window.clearNotificationCount = clearNotificationCount;
+window.cleanupAdminActionListeners = cleanupAdminActionListeners;
+window.showAdminActionNotification = showAdminActionNotification;
+window.handleAdminAction = handleAdminAction;
+window.updateNotificationBadge = updateNotificationBadge;
+
+/**
+ * Start notifications system when Supabase client and academy ID are ready.
+ * This polls for up to ~10 seconds and then initializes listeners and initial sync.
+ */
+window.startNotificationSystem = function() {
+  (async function waitAndStart() {
+    const maxAttempts = 40; // ~10s with 250ms interval
+    let attempt = 0;
+
+    while (attempt < maxAttempts) {
+      const sup = window.supabaseClient;
+      const academyId = window.currentAcademyId || window.ACADEMY_ID || localStorage.getItem('current_academy_id');
+      if (sup && academyId) {
+        try {
+          setupAdminActionListeners(academyId);
+          console.log('🔔 startNotificationSystem: listeners initialized for', academyId);
+        } catch (e) {
+          console.error('❌ Error initializing listeners in startNotificationSystem:', e);
+        }
+
+        // Perform initial unread fetch/sync if helper exists
+        try {
+          if (typeof window.fetchUnreadNotificationsAndSync === 'function') {
+            window.fetchUnreadNotificationsAndSync(academyId).catch(err => console.error('❌ fetchUnreadNotificationsAndSync error:', err));
+          }
+        } catch (e) {
+          console.warn('⚠️ fetchUnreadNotificationsAndSync not present or failed', e);
+        }
+
+        return;
+      }
+
+      await new Promise(r => setTimeout(r, 250));
+      attempt++;
+    }
+
+    console.warn('⚠️ startNotificationSystem timed out waiting for supabaseClient or academyId');
+  })();
+};
+
+// Notification history tracking
+window.notificationHistory = [];
+
+/**
+ * Add notification to history (dedup by id if provided)
+ * @param {string} emoji
+ * @param {string} message
+ * @param {string|Date} timestamp
+ * @param {string} [id]
+ */
+window.addToNotificationHistory = function(emoji, message, timestamp = new Date(), id = null) {
+  // Deduplicate by id when available
+  if (id) {
+    const exists = window.notificationHistory.find(n => n.id === id);
+    if (exists) return;
+  }
+
+  window.notificationHistory.unshift({
+    id: id || null,
+    emoji,
+    message,
+    timestamp
+  });
+  // Keep only last 50 notifications
+  if (window.notificationHistory.length > 50) {
+    window.notificationHistory.pop();
+  }
+  updateNotificationHistoryDisplay();
+};
+
+/**
+ * Update notification history display in modal
+ */
+function updateNotificationHistoryDisplay() {
+  const content = document.getElementById('notificationHistoryContent');
+  if (!content) return;
+
+  if (window.notificationHistory.length === 0) {
+    content.innerHTML = `
+      <i class="fas fa-bell-slash" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.5;"></i>
+      <p>لا توجد إشعارات جديدة</p>
+    `;
+    return;
+  }
+
+  const html = window.notificationHistory.map((notif, index) => {
+    const time = notif.timestamp instanceof Date ?
+      notif.timestamp.toLocaleString('ar-EG') :
+      notif.timestamp;
+
+    const isUnread = !notif.is_read;
+    const borderStyle = isUnread ? 'border-right: 4px solid var(--danger); background: rgba(239,68,68,0.04);' : '';
+
+    return `
+      <div class="notification-card" style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: right; cursor: pointer; transition: background 0.15s; ${borderStyle}" onclick="window._onNotificationHistoryClick('${notif.id || ''}')">
+        <div style="display:flex; gap:12px; align-items:center;">
+          <div style="width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0; background: rgba(0,0,0,0.06);">
+            ${notif.emoji}
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+              <div style="flex:1">
+                <p style="margin:0; font-weight:700; color:var(--text-primary);">${escapeHtml(notif.message)}</p>
+                <p style="margin:6px 0 0 0; font-size:0.85rem; color:var(--text-secondary);">${time}</p>
+              </div>
+              ${isUnread ? '<span style="display:inline-block; width:10px; height:10px; background: var(--danger); border-radius:50%; margin-left:8px"></span>' : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  content.innerHTML = html;
+}
+
+// Handle click on a history item: mark as read (optimistic) and call server-side mark if available
+window._onNotificationHistoryClick = async function(id) {
+  try {
+    if (!id) return;
+    // Optimistically mark in history
+    const found = window.notificationHistory.find(n => n.id === id);
+    if (found) found.is_read = true;
+    updateNotificationHistoryDisplay();
+
+    // Call server-side mark function if available
+    if (typeof window.markNotificationAsRead === 'function') {
+      try {
+        await window.markNotificationAsRead(id);
+      } catch (e) {
+        console.warn('⚠️ markNotificationAsRead failed:', e);
+      }
+    }
+
+    // Update badge count
+    if (typeof window.updateNotificationBadge === 'function') {
+      // recompute unread count from history where possible
+      const unreadLocal = (window.notificationHistory || []).filter(n => !n.is_read).length;
+      window.unreadNotificationCount = Math.max(0, unreadLocal);
+      window.updateNotificationBadge();
+    }
+  } catch (e) {
+    console.error('❌ _onNotificationHistoryClick error:', e);
+  }
+};
+
+/**
+ * Clear all notifications
+ */
+window.clearAllNotifications = function() {
+  window.notificationHistory = [];
+  window.unreadNotificationCount = 0;
+  window.updateNotificationBadge();
+  updateNotificationHistoryDisplay();
+  console.log('🧹 All notifications cleared');
+};
+
+/**
+ * Open notification history modal
+ */
+window.openNotificationHistory = function() {
+  const modal = document.getElementById('notificationHistoryModal');
+  if (modal) {
+    updateNotificationHistoryDisplay();
+    modal.style.display = 'flex';
+  }
+};
+
+// Attach header modal buttons when opening
+{ // Immediately run block to ensure functions exist
+  const origOpen = window.openNotificationHistory;
+  window.openNotificationHistory = function() {
+    const modal = document.getElementById('notificationHistoryModal');
+    if (modal) {
+      updateNotificationHistoryDisplay();
+      modal.style.display = 'flex';
+
+      // Wire buttons
+      const markBtn = document.getElementById('markAllAsReadBtn');
+      if (markBtn) {
+        markBtn.onclick = async function() {
+          try {
+            if (typeof window.markAllNotificationsAsRead === 'function') {
+              await window.markAllNotificationsAsRead();
+            }
+          } catch (e) {
+            console.warn('⚠️ markAllNotificationsAsRead error:', e);
+          }
+          // Update local history state
+          window.notificationHistory.forEach(n => n.is_read = true);
+          window.unreadNotificationCount = 0;
+          if (window.updateNotificationBadge) window.updateNotificationBadge();
+          updateNotificationHistoryDisplay();
+        };
+      }
+
+      const delBtn = document.getElementById('deleteAllNotificationsBtn');
+      if (delBtn) {
+        delBtn.onclick = async function() {
+          if (!confirm('هل أنت متأكد من حذف جميع الإشعارات؟')) return;
+
+          // Prefer server-side deletion if exported
+          if (typeof window.clearAllNotificationsDB === 'function') {
+            try {
+              await window.clearAllNotificationsDB();
+              console.log('✅ clearAllNotificationsDB succeeded');
+              // Local cleanup
+              window.notificationHistory = [];
+              window.unreadNotificationCount = 0;
+              if (window.updateNotificationBadge) window.updateNotificationBadge();
+              updateNotificationHistoryDisplay();
+            } catch (e) {
+              console.error('❌ clearAllNotificationsDB failed:', e);
+              // Fallback to local clear
+              window.notificationHistory = [];
+              window.unreadNotificationCount = 0;
+              if (window.updateNotificationBadge) window.updateNotificationBadge();
+              updateNotificationHistoryDisplay();
+              alert('حاول حذف الإشعارات من الخادم وفشل. تم مسح القائمة محلياً.');
+            }
+            return;
+          }
+
+          // Fallback: local-only clear
+          if (typeof window.clearAllNotifications === 'function') {
+            try {
+              window.clearAllNotifications();
+            } catch (e) {
+              console.warn('⚠️ clearAllNotifications failed:', e);
+              window.notificationHistory = [];
+              window.unreadNotificationCount = 0;
+              if (window.updateNotificationBadge) window.updateNotificationBadge();
+              updateNotificationHistoryDisplay();
+            }
+          } else {
+            window.notificationHistory = [];
+            window.unreadNotificationCount = 0;
+            if (window.updateNotificationBadge) window.updateNotificationBadge();
+            updateNotificationHistoryDisplay();
+          }
+        };
+      }
+    }
+  };
+}
+
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) modal.style.display = 'none';
 }
+
+/**
+ * Stop notification visuals: remove badge animation, remove transient admin notifications
+ */
+window.stopNotificationVisuals = function() {
+  try {
+    const badge = document.getElementById('notificationBadge');
+    if (badge) {
+      badge.classList.remove('show');
+      badge.style.display = 'none';
+    }
+
+    const container = document.getElementById('notificationContainer');
+    if (container) {
+      // remove transient admin-action-notification elements
+      const transient = container.querySelectorAll('.admin-action-notification');
+      transient.forEach(n => n.remove());
+    }
+
+    // Also remove small floating notifications if any
+    const bodyNotifs = document.querySelectorAll('.notification');
+    bodyNotifs.forEach(n => {
+      // don't remove persistent history container children
+      if (!n.classList.contains('admin-action-notification')) {
+        n.remove();
+      }
+    });
+
+    console.log('🔕 Notification visuals stopped');
+  } catch (e) {
+    console.error('❌ stopNotificationVisuals error:', e);
+  }
+};
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);

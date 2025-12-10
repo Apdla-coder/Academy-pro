@@ -624,7 +624,7 @@ function initRevenueChart() {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           display: true,
@@ -632,7 +632,8 @@ function initRevenueChart() {
           labels: {
             usePointStyle: true,
             padding: 15,
-            font: { size: 12, weight: 'bold' }
+            font: { size: 12, weight: 'bold' },
+            color: '#ffffff'
           }
         },
         tooltip: {
@@ -640,6 +641,8 @@ function initRevenueChart() {
           padding: 12,
           titleFont: { size: 13, weight: 'bold' },
           bodyFont: { size: 12 },
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
           callbacks: {
             label: function(context) {
               return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
@@ -654,12 +657,13 @@ function initRevenueChart() {
             callback: function(value) {
               return formatCurrency(value);
             },
-            font: { size: 11 }
+            font: { size: 11 },
+            color: '#cbd5e1'
           },
-          grid: { color: 'rgba(0,0,0,0.05)' }
+          grid: { color: 'rgba(255,255,255,0.03)' }
         },
         x: {
-          ticks: { font: { size: 11 } },
+          ticks: { font: { size: 11 }, color: '#cbd5e1' },
           grid: { display: false }
         }
       }
@@ -721,7 +725,7 @@ function initStudentsDistributionChart() {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           display: true,
@@ -730,6 +734,7 @@ function initStudentsDistributionChart() {
             usePointStyle: true,
             padding: 15,
             font: { size: 11 },
+            color: '#ffffff',
             generateLabels: function(chart) {
               const data = chart.data;
               return data.labels.map((label, i) => ({
@@ -1165,6 +1170,73 @@ document.addEventListener('DOMContentLoaded', function() {
     const academyId = window.currentAcademyId || window.ACADEMY_ID || localStorage.getItem('current_academy_id');
     console.log('🔍 Academy ID on load:', academyId);
     
+    // Ensure notification startup works even if Supabase or academyId are not immediately ready
+    if (window.startNotificationSystem) {
+      try {
+        window.startNotificationSystem();
+        console.log('🔔 startNotificationSystem called');
+      } catch (e) {
+        console.error('❌ Error calling startNotificationSystem:', e);
+      }
+    } else if (academyId && window.setupAdminActionListeners) {
+      // Fallback: call directly if helper not present
+      window.setupAdminActionListeners(academyId);
+      console.log('🔔 Real-time admin action listeners initialized (fallback)');
+    }
+    
+    // Setup bell icon click to open notification history
+    const notificationBell = document.getElementById('notificationBell');
+    if (notificationBell) {
+      notificationBell.addEventListener('click', async function(e) {
+        console.log('🔔 Bell icon clicked - opening notification history');
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.openNotificationHistory) {
+          window.openNotificationHistory();
+        }
+
+        // Mark notifications as read on open (server + local), stop badge/animations
+        try {
+          if (typeof markAllNotificationsAsRead === 'function') {
+            await markAllNotificationsAsRead();
+            console.log('✅ markAllNotificationsAsRead called');
+          }
+        } catch (err) {
+          console.warn('⚠️ markAllNotificationsAsRead failed:', err);
+        }
+
+        try {
+          if (window.clearNotificationCount) window.clearNotificationCount();
+          if (window.stopNotificationVisuals) window.stopNotificationVisuals();
+        } catch (e) {
+          console.warn('⚠️ Error stopping visuals:', e);
+        }
+      });
+    } else {
+      console.warn('⚠️ Notification bell not found');
+    }
+    
+    // Make test function available globally for testing
+    window.testNotification = function() {
+      const notifications = [
+        { emoji: '👥', message: 'تم إضافة طالب جديد' },
+        { emoji: '📚', message: 'تم تحديث الكورس' },
+        { emoji: '💰', message: 'تم تسجيل دفعة جديدة' }
+      ];
+      
+      // Random notification
+      const notif = notifications[Math.floor(Math.random() * notifications.length)];
+      
+      if (window.showAdminActionNotification) {
+        window.showAdminActionNotification(notif.emoji, notif.message, 'test');
+        window.unreadNotificationCount++;
+        window.updateNotificationBadge();
+        console.log('✅ Test notification sent');
+      }
+    };
+    
+    console.log('✅ Notification system ready. Test with: window.testNotification()');
+    
     // Check if we're on dashboard tab when content loads
     const dashboardContent = document.getElementById('dashboardContent');
     if (dashboardContent && dashboardContent.style.display !== 'none') {
@@ -1176,15 +1248,33 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 500);
 });
 
-// Listen for tab switches
+// Listen for tab switches - use event-based approach to avoid conflicts
+if (!window._switchTabHandlers) {
+  window._switchTabHandlers = [];
 const originalSwitchTab = window.switchTab;
 window.switchTab = function(tabName) {
   console.log('🔄 Tab switched to:', tabName);
-  if (tabName === 'dashboard') {
-    console.log('📊 Loading dashboard data...');
-    loadDashboardData();
+    
+    // Call all registered handlers
+    window._switchTabHandlers.forEach(handler => {
+      try {
+        handler(tabName);
+      } catch (error) {
+        console.error('Error in switchTab handler:', error);
   }
+    });
+    
+    // Call original if exists
   if (originalSwitchTab) {
     originalSwitchTab(tabName);
   }
 };
+}
+
+// Register dashboard handler
+window._switchTabHandlers.push(function(tabName) {
+  if (tabName === 'dashboard') {
+    console.log('📊 Loading dashboard data...');
+    loadDashboardData();
+  }
+});

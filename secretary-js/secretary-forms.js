@@ -581,6 +581,10 @@ async function addSubscription(e) {
         console.warn('⚠️ Warning: Could not create payment record:', paymentError);
       } else {
         console.log(`✅ Payment record created: ${formatCurrency(amountPaid)}`);
+        
+        // ✅ تحديث الخزينة يتم تلقائياً من خلال Trigger في قاعدة البيانات
+        // لا حاجة لتحديث يدوي - الـ Trigger سيتعامل مع كل شيء تلقائياً
+        console.log('✅ سيتم تحديث الخزينة تلقائياً من خلال Trigger');
       }
     } else {
       console.log('ℹ️ No payment amount provided - subscription created without payment record');
@@ -902,26 +906,19 @@ async function addPayment(e) {
       );
 
       if (error) throw error;
+      
+      // ✅ إضافة المبلغ تلقائياً للخزينة يتم من خلال Trigger في قاعدة البيانات
+      // لا حاجة لتحديث يدوي - الـ Trigger سيتعامل مع كل شيء تلقائياً
+      console.log('✅ تم إضافة الدفعة. سيتم تحديث الخزينة تلقائياً من خلال Trigger');
+      
       showStatus('✅ تم إضافة الدفعة بنجاح', 'success');
       
-      // Print receipt after successful save
+      // Print receipt immediately after successful save
       if (data && data[0] && typeof printPaymentReceipt === 'function') {
-        const paymentData = {
-          ...data[0],
-          student_id: studentId,
-          course_id: courseId,
-          amount: parseFloat(amount)
-        };
-        
-        if (typeof showPaymentReceiptAfterSave === 'function') {
-          showPaymentReceiptAfterSave(paymentData);
-        } else {
-          // Fallback to direct print
-          const confirmPrint = confirm('هل تريد طباعة فاتورة الدفعة؟');
-          if (confirmPrint) {
+        // Print immediately without confirmation
+        setTimeout(() => {
             printPaymentReceipt(data[0].id);
-          }
-        }
+        }, 500); // Small delay to ensure data is loaded
       }
     }
 
@@ -933,14 +930,21 @@ async function addPayment(e) {
     
     clearDataCache('payments');
     clearDataCache('subscriptions');
+    clearDataCache('treasury'); // ✅ Clear treasury cache to force reload
+    
+    // Wait a moment for the database trigger to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // Use tab refresh manager to trigger auto-refresh for affected tabs
     if (window.tabRefreshManager) {
       await window.tabRefreshManager.refreshTab('payments');
       await window.tabRefreshManager.refreshTab('subscriptions'); // Refresh subscriptions to update payment status
       await window.tabRefreshManager.refreshTab('students'); // Refresh students tab to update payment info
       await window.tabRefreshManager.refreshTab('courses'); // Refresh courses tab to update revenue
+      await window.tabRefreshManager.refreshTab('treasury'); // ✅ تحديث الخزينة مع كل دفعة جديدة
     } else {
       await loadPayments(true); // fallback if tabRefreshManager not available
+      await loadTreasuryTab(); // ✅ تحديث الخزينة كبديل
     }
     
     // Re-enable realtime sync after a short delay

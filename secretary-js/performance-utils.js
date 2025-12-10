@@ -29,7 +29,9 @@ class TabRefreshManager {
       subscriptions: [],
       payments: [],
       attendances: [],
-      dashboard: []
+      dashboard: [],
+      treasury: [],
+      notifications: []
     };
   }
 
