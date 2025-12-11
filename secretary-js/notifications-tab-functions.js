@@ -302,16 +302,28 @@ window.clearAllNotificationsDB = clearAllNotifications;
  */
 function updateNotificationsBadge() {
   const unreadCount = notificationsData.filter(n => !n.is_read).length;
-  const badge = document.getElementById('notificationsBadge');
+  const badge = document.getElementById('notificationsUnreadCount');
   
   if (badge) {
-    if (unreadCount > 0) {
-      badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-      badge.style.display = 'inline-flex';
+    // تحديث الرقم
+    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+    
+    // تغيير اللون حسب عدد الإشعارات غير المقروءة
+    if (unreadCount > 20) {
+      badge.style.background = '#ef4444'; // أحمر فاقع للعدد الكبير
+      badge.style.fontWeight = 'bold';
+    } else if (unreadCount > 10) {
+      badge.style.background = '#f97316'; // برتقالي للعدد المتوسط
+      badge.style.fontWeight = '600';
+    } else if (unreadCount > 0) {
+      badge.style.background = '#10b981'; // أخضر للعدد الصغير
+      badge.style.fontWeight = '500';
     } else {
-      badge.style.display = 'none';
+      badge.style.background = '#6b7280'; // رمادي عندما لا توجد إشعارات
     }
   }
+  
+  console.log(`🔔 Notifications badge updated: ${unreadCount} unread`);
 }
 
 /**

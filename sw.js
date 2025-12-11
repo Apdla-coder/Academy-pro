@@ -87,7 +87,12 @@ self.addEventListener('fetch', (event) => {
 
 // استقبال رسائل من الصفحة
 self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+  try {
+    if (event.data?.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+    }
+    // لا تعيد true - هذا يسبب خطأ async response
+  } catch (error) {
+    console.error('Error in message handler:', error);
   }
 });

@@ -904,18 +904,27 @@ function updateNotificationBadge() {
 
   console.log('📊 Badge update - Count:', window.unreadNotificationCount);
   
-  if (window.unreadNotificationCount > 0) {
-    const displayText = window.unreadNotificationCount > 99 ? '99+' : window.unreadNotificationCount;
-    badge.textContent = displayText;
-    badge.classList.add('show');
-    badge.style.display = 'flex';
-    console.log('✅ Badge displayed:', displayText);
+  // عرض الرقم دائماً
+  const displayText = window.unreadNotificationCount > 99 ? '99+' : window.unreadNotificationCount;
+  badge.textContent = displayText;
+  badge.style.display = 'inline-flex';
+  
+  // تغيير اللون حسب عدد الإشعارات غير المقروءة
+  if (window.unreadNotificationCount > 20) {
+    badge.style.background = '#ef4444'; // أحمر فاقع للعدد الكبير
+    badge.style.fontWeight = 'bold';
+  } else if (window.unreadNotificationCount > 10) {
+    badge.style.background = '#f97316'; // برتقالي للعدد المتوسط
+    badge.style.fontWeight = '600';
+  } else if (window.unreadNotificationCount > 0) {
+    badge.style.background = '#10b981'; // أخضر للعدد الصغير
+    badge.style.fontWeight = '500';
   } else {
-    badge.classList.remove('show');
-    badge.style.display = 'none';
-    badge.textContent = '';
-    console.log('✅ Badge hidden');
+    badge.style.background = '#6b7280'; // رمادي عندما لا توجد إشعارات
+    badge.style.fontWeight = '400';
   }
+  
+  console.log('✅ Badge updated:', displayText);
 }
 
 /**

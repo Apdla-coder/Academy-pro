@@ -719,7 +719,8 @@ function initStudentsDistributionChart() {
           borderColor: '#fff',
           borderWidth: 3,
           hoverBorderColor: '#333',
-          hoverBorderWidth: 2
+          hoverBorderWidth: 2,
+          text: '#ece2e2ff'
         }
       ]
     },

@@ -94,6 +94,24 @@ async function loadTreasuryTab() {
 
     // Load transactions
     await loadTreasuryTransactions();
+
+    // تحديث البادج
+    updateTreasuryWithdrawalBadge();
+    
+    // استعادة حالة الإخفاء من localStorage
+    const isTreasuryTableHidden = localStorage.getItem('treasuryTransactionsVisible') === 'false';
+    const treasuryContent = document.getElementById('treasuryContent');
+    const toggleBtn = document.getElementById('toggleTreasuryTableBtn');
+    
+    if (treasuryContent && toggleBtn) {
+      if (isTreasuryTableHidden) {
+        treasuryContent.classList.add('treasury-transactions-hidden');
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i> <span>إظهار السجل</span>';
+      } else {
+        treasuryContent.classList.remove('treasury-transactions-hidden');
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> <span>إخفاء السجل</span>';
+      }
+    }
   } catch (error) {
     console.error('❌ Error loading treasury:', error);
     showStatus('خطأ في تحميل بيانات الخزينة', 'error');
@@ -149,6 +167,9 @@ async function loadTreasuryTransactions() {
     treasuryTransactions.forEach(t => {
       console.log(`   - ${t.transaction_type}: ${t.amount} ج.م - ${t.description}`);
     });
+    
+    // تحديث عدد السحوبات في البادج
+    updateTreasuryWithdrawalBadge();
     
     renderTreasuryTransactions();
     
@@ -279,6 +300,9 @@ function renderTreasuryTransactions(filter = '') {
   `;
 
   container.innerHTML = html;
+  
+  // تحديث البادج عند عرض المعاملات
+  updateTreasuryWithdrawalBadge();
 }
 
 /**
@@ -374,5 +398,70 @@ window.debugTreasury = async function() {
 
   console.log('🔍 === END DEBUG ===');
 };
+
+/**
+ * تحديث عدد السحوبات في البادج بجانب تاب الخزينة
+ */
+function updateTreasuryWithdrawalBadge() {
+  try {
+    const badge = document.getElementById('treasuryWithdrawalCount');
+    if (!badge || !treasuryTransactions) return;
+    
+    // عد السحوبات (withdrawal)
+    const withdrawalCount = treasuryTransactions.filter(t => t.transaction_type === 'withdrawal').length;
+    
+    // تحديث البادج برقم السحوبات
+    badge.textContent = withdrawalCount;
+    
+    // تغيير اللون حسب عدد السحوبات
+    if (withdrawalCount > 10) {
+      badge.style.background = '#ef4444'; // أحمر فاقع للعدد الكبير
+      badge.style.fontWeight = 'bold';
+    } else if (withdrawalCount > 5) {
+      badge.style.background = '#f97316'; // برتقالي للعدد المتوسط
+      badge.style.fontWeight = '600';
+    } else if (withdrawalCount > 0) {
+      badge.style.background = '#10b981'; // أخضر للعدد الصغير
+      badge.style.fontWeight = '500';
+    } else {
+      badge.style.background = '#6b7280'; // رمادي عندما لا توجد سحوبات
+    }
+    
+    console.log(`📊 Treasury badge updated: ${withdrawalCount} withdrawals`);
+  } catch (error) {
+    console.error('❌ Error updating treasury badge:', error);
+  }
+}
+
+/**
+ * تبديل ظهور وإخفاء جدول المعاملات
+ */
+function toggleTreasuryTransactionsTable() {
+  try {
+    const treasuryContent = document.getElementById('treasuryContent');
+    const btn = document.getElementById('toggleTreasuryTableBtn');
+    
+    if (!treasuryContent || !btn) {
+      console.error('❌ Elements not found');
+      return;
+    }
+    
+    const isHidden = treasuryContent.classList.toggle('treasury-transactions-hidden');
+    
+    // تحديث نص الزر والأيقونة
+    if (isHidden) {
+      btn.innerHTML = '<i class="fas fa-eye"></i> <span>إظهار السجل</span>';
+    } else {
+      btn.innerHTML = '<i class="fas fa-eye-slash"></i> <span>إخفاء السجل</span>';
+    }
+    
+    // حفظ الحالة في localStorage
+    localStorage.setItem('treasuryTransactionsVisible', !isHidden);
+    
+    console.log(`👁️ Treasury transactions table ${isHidden ? 'hidden' : 'shown'}`);
+  } catch (error) {
+    console.error('❌ Error toggling treasury transactions table:', error);
+  }
+}
 
 

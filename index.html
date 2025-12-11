@@ -559,6 +559,29 @@
 
   // إنشاء أكاديمية جديدة
 
+  // ============================================================================
+  // Handle Chrome Extension Message Errors
+  // ============================================================================
+  // منع خطأ: "A listener indicated an asynchronous response by returning true, 
+  // but the message channel closed before a response was received"
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    try {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        // أجب فوراً لمنع timeout
+        try {
+          sendResponse({ received: true });
+        } catch (error) {
+          // قد يكون الـ channel مقفول بالفعل، لا مشكلة
+          console.debug('Message response error (expected):', error.message);
+        }
+        return false; // لا تعيد true
+      });
+    } catch (error) {
+      // قد لا تكون chrome API متاحة في كل المتصفحات
+      console.debug('Chrome runtime not available');
+    }
+  }
+
 </script>
 </body>
 </html>
