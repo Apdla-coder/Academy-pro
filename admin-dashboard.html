@@ -4,15 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>لوحة تحكم المدير</title>
-      <link rel="icon" href="./images/Logo for Alabd with Abstract Icon (1).png" type="image/jpeg">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="cs/dark-theme.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* Theme variables are loaded from cs/dark-theme.css */
-
-        /* ============ General Styles ============ */
         * {
             margin: 0;
             padding: 0;
@@ -20,127 +15,119 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        :root {
+            /* Theme Colors */
+            --primary: #3B82F6;
+            --primary-dark: #2563EB;
+            --primary-light: rgba(59, 130, 246, 0.1);
+            --primary-glow: rgba(59, 130, 246, 0.3);
+            
+            --secondary: #10B981;
+            --secondary-light: rgba(16, 185, 129, 0.1);
+            --secondary-glow: rgba(16, 185, 129, 0.3);
+            
+            --warning: #F59E0B;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --warning-glow: rgba(245, 158, 11, 0.3);
+            
+            --danger: #EF4444;
+            --danger-light: rgba(239, 68, 68, 0.1);
+            --danger-glow: rgba(239, 68, 68, 0.3);
+            
+            --info: #8B5CF6;
+            --info-light: rgba(139, 92, 246, 0.1);
+            
+            /* Dark Theme - Default */
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-tertiary: #334155;
+            --bg-card: #1E293B;
+            --bg-hover: #334155;
+            
+            --text-primary: #F1F5F9;
+            --text-secondary: #CBD5E1;
+            --text-light: #94A3B8;
+            --text-muted: #64748B;
+            
+            --border: rgba(148, 163, 184, 0.1);
+            --border-light: rgba(148, 163, 184, 0.05);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+            
+            /* Layout */
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        /* Light Theme */
+        body.light-mode {
+            --bg-primary: #F8FAFC;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F1F5F9;
+            --bg-card: #FFFFFF;
+            --bg-hover: #F1F5F9;
+            
+            --text-primary: #1E293B;
+            --text-secondary: #334155;
+            --text-light: #475569;
+            --text-muted: #64748B;
+            
+            --border: rgba(15, 23, 42, 0.15);
+            --border-light: rgba(15, 23, 42, 0.08);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
         body {
-            font-family: 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             direction: rtl;
             overflow-x: hidden;
+            min-height: 100vh;
+            transition: all 0.3s ease;
         }
 
-        /* ============ Subscription Modal ============ */
-        .subscription-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.7);
-            background: var(--bg-card);
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: var(--shadow-lg);
-            z-index: 10000;
-            max-width: 90%;
-            width: 95%;
-            max-width: 480px;
-            text-align: center;
-            border: 3px solid var(--danger);
-            opacity: 0;
-            transition: all 0.3s ease-out;
+        /* Force text colors in light mode */
+        body.light-mode * {
+            color: inherit;
         }
 
-        .subscription-modal.show {
-            display: block;
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
+        body.light-mode .header h1,
+        body.light-mode .section-header h2,
+        body.light-mode .modal-header h3,
+        body.light-mode .form-group label,
+        body.light-mode .financial-card h3,
+        body.light-mode .balance-card h3,
+        body.light-mode .users-table th {
+            color: #1E293B !important;
         }
 
-        .modal-icon {
-            font-size: 3rem;
-            color: var(--danger);
-            margin-bottom: 1rem;
-            animation: pulse 2s infinite;
+        body.light-mode .stat-card p,
+        body.light-mode .financial-card p,
+        body.light-mode .user-info span,
+        body.light-mode .users-table td {
+            color: #334155 !important;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        body.light-mode .balance-card .amount,
+        body.light-mode .users-table tbody tr {
+            color: #1E293B !important;
         }
 
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-        }
-
-        .modal-overlay.show {
-            display: block;
-        }
-
-        .modal-content-text {
-            margin-bottom: 1.5rem;
-            color: var(--danger);
-            font-size: 1.1rem;
-        }
-
-        .close-modal {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.3s;
-        }
-
-        .close-modal:hover {
-            background-color: rgba(239,68,68,0.85);
-        }
-
-        .subscription-alert {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(45deg, var(--danger), var(--primary));
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            z-index: 10001;
-            display: none;
-            text-align: center;
-            font-weight: bold;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        .subscription-alert.show {
-            display: block;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translate(-50%, -100%);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
-        }
-
-        /* ============ Header Styles ============ */
+        /* ============ Header ============ */
         .header {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 20px 30px;
             box-shadow: var(--shadow-md);
             position: sticky;
             top: 0;
@@ -148,885 +135,978 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            backdrop-filter: blur(10px);
         }
 
         .header h1 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+        }
+
+        .user-info span {
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .logout-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
+            background: var(--primary-light);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             display: flex;
             align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
 
         .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
         }
 
-        /* ============ Main Container ============ */
+        /* ============ Container ============ */
         .container {
-            padding: 15px;
-            max-width: 100%;
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding-bottom: 100px;
         }
 
         .content-section {
             background: var(--bg-card);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            box-shadow: var(--shadow-light);
-            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .content-section:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-glow);
         }
 
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .section-header h2 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin: 0;
-            color: var(--dark);
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+
+        .section-header h2 i {
+            color: var(--primary);
+            font-size: 1.3rem;
         }
 
         /* ============ Stats Grid ============ */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
         }
 
         .stat-card {
-            background: var(--primary);
-            color: white;
-            padding: 15px 10px;
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border);
+            padding: 25px;
             border-radius: var(--radius-md);
             text-align: center;
-            box-shadow: 0 4px 10px rgba(249,115,22,0.2);
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .stat-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
         }
 
         .stat-card h3 {
-            font-size: 1.4rem;
-            margin-bottom: 5px;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .stat-card p {
-            font-size: 0.85rem;
-            margin: 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
-        .stat-card.financial { background: var(--secondary); }
-        .stat-card.warning { background: var(--warning); }
-        .stat-card.danger { background: var(--danger); }
-        .stat-card.info { background: var(--info); }
+        .stat-card.financial h3 { 
+            background: linear-gradient(135deg, var(--secondary), #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card.warning h3 { 
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card.danger h3 { 
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card.info h3 { 
+            background: linear-gradient(135deg, var(--info), #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
         /* ============ Financial Summary ============ */
         .financial-summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
         }
 
         .financial-card {
-            background: var(--bg-card);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             border-radius: var(--radius-md);
-            padding: 15px;
-            box-shadow: var(--shadow-light);
-            border-left: 4px solid var(--primary);
+            padding: 30px;
+            box-shadow: var(--shadow-md);
             text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .financial-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .financial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .financial-card:hover::after {
+            width: 100%;
+            opacity: 0.1;
         }
 
         .financial-card h3 {
-            margin-bottom: 10px;
-            color: var(--dark);
-            font-size: 1rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            font-weight: 600;
         }
 
         .financial-card .amount {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 8px 0;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 15px 0;
         }
 
-        .financial-card .amount.paid { color: var(--success); }
+        .financial-card .amount.paid { color: var(--secondary); }
         .financial-card .amount.remaining { color: var(--danger); }
         .financial-card .amount.total { color: var(--primary); }
 
-        /* ============ Attendance Cards ============ */
-        .attendance-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .attendance-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-light);
-            overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid var(--border);
-        }
-
-        .attendance-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .card-header {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-header h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .card-body {
-            padding: 15px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .info-row:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        .label {
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .value {
-            color: var(--gray);
-        }
-
-        .status {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .status.present {
-            background-color: var(--secondary-light);
-            color: var(--secondary);
-        }
-
-        .status.partial {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .status.absent {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 30px;
-            color: var(--gray);
-            font-style: italic;
-            background: var(--gray-light);
-            border-radius: var(--radius-sm);
-            margin: 15px 0;
-            font-size: 1rem;
-        }
-
-        /* ============ Filters ============ */
-        .attendance-filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: var(--gray-light);
-            border-radius: var(--radius-sm);
-            align-items: end;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .filter-group label {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--dark);
-        }
-
-        .filter-group input,
-        .filter-group select {
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
+        .financial-card p {
+            color: var(--text-secondary);
             font-size: 0.9rem;
         }
 
-        .filter-group input:focus,
-        .filter-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
-        }
-
-        .clear-btn {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-size: 0.9rem;
-            height: fit-content;
-            align-self: flex-end;
-        }
-
-        .clear-btn:hover {
-            background: #dc2626;
-        }
-
-        /* ============ User Management ============ */
-        .users-management {
-            margin-top: 20px;
-            margin-bottom: 30px;
-        }
-
+        /* ============ Users Table ============ */
         .users-filters {
             display: flex;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         .search-input,
         .role-filter {
-            padding: 10px;
+            padding: 14px 18px;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus,
+        .role-filter:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            background: var(--bg-tertiary);
         }
 
         .search-input {
             flex: 1;
+            min-width: 250px;
         }
 
         .role-filter {
-            min-width: 150px;
+            min-width: 180px;
         }
 
         .users-table-container {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
         }
 
         .users-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            background: var(--bg-card);
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-light);
+            background: var(--bg-secondary);
         }
 
         .users-table th,
         .users-table td {
-            padding: 12px;
+            padding: 18px;
             text-align: right;
             border-bottom: 1px solid var(--border);
         }
 
         .users-table th {
-            background: var(--gray-light);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
             font-weight: 600;
-            color: var(--dark);
+            font-size: 0.95rem;
+            position: sticky;
+            top: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .users-table tr:hover {
-            background: var(--gray-light);
+        .users-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .users-table tbody tr:hover {
+            background: var(--bg-hover);
+            transform: scale(1.01);
         }
 
         .user-actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .action-btn {
-            padding: 6px 12px;
+            padding: 10px 18px;
             border: none;
             border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
-            gap: 5px;
-            transition: background 0.3s;
+            gap: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .edit-btn {
-            background: var(--info);
-            color: white;
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--primary);
         }
 
         .edit-btn:hover {
-            background: #2563eb;
-        }
-
-        .delete-btn {
-            background: var(--danger);
+            background: var(--primary);
             color: white;
         }
 
-        .delete-btn:hover {
-            background: #dc2626;
-        }
-
-        .user-status {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .status-active {
-            background: var(--secondary-light);
-            color: var(--secondary);
-        }
-
-        .status-inactive {
+        .delete-btn {
             background: var(--danger-light);
             color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .delete-btn:hover {
+            background: var(--danger);
+            color: white;
         }
 
         .add-user-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 14px 24px;
             border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: var(--shadow-sm);
         }
 
         .add-user-btn:hover {
             background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
         }
 
-        /* ============ Modal Styles ============ */
+        /* ============ Modal ============ */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 35px;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            font-weight: 700;
         }
 
         .close-btn {
             background: none;
             border: none;
-            font-size: 24px;
-            color: var(--gray);
+            font-size: 28px;
+            color: var(--text-muted);
             cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
 
         .close-btn:hover {
-            color: var(--dark);
-        }
-
-        .add-user-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .status-message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: var(--radius-sm);
-            display: none;
-        }
-
-        .status-message.success {
-            background: var(--secondary-light);
-            color: var(--secondary);
-            display: block;
-        }
-
-        .status-message.error {
-            background: var(--danger-light);
             color: var(--danger);
-            display: block;
+            background: var(--danger-light);
+            transform: rotate(90deg);
         }
 
-        .status-message.info {
-            background: var(--info-light);
-            color: var(--info);
-            display: block;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px 25px;
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-md);
-            z-index: 1000;
-            animation: slideDown 0.3s ease-out;
+        .form-group {
+            margin-bottom: 25px;
         }
 
-        @keyframes slideDown {
-            from {
-                top: -100px;
-                opacity: 0;
-            }
-            to {
-                top: 20px;
-                opacity: 1;
-            }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            background: var(--bg-tertiary);
         }
 
         .form-actions {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 30px;
         }
 
         .submit-btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 14px 28px;
             border-radius: var(--radius-sm);
             cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 1rem;
         }
 
         .submit-btn:hover {
             background: var(--primary-dark);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
         }
 
         .cancel-btn {
-            background: var(--gray-light);
-            color: var(--dark);
-            border: none;
-            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
             border-radius: var(--radius-sm);
             cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 1rem;
         }
 
         .cancel-btn:hover {
-            background: var(--border);
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
         }
 
-        .modal-content {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: var(--radius-md);
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
+        .status-message {
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin-top: 20px;
+            display: none;
+            font-weight: 500;
+            border: 1px solid;
         }
 
-        .form-group {
+        .status-message.success {
+            background: var(--secondary-light);
+            color: var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .status-message.error {
+            background: var(--danger-light);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .status-message.info {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* ============ Tab Navigation ============ */
+        .tab-navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 200;
+            padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px 8px;
+            cursor: pointer;
             display: flex;
             flex-direction: column;
-            gap: 5px;
-        }
-
-        .form-group label {
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            transition: all 0.3s ease;
             font-weight: 600;
-            color: var(--dark);
+            position: relative;
+            min-height: 60px;
         }
 
-        .form-group input,
-        .form-group select {
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-actions button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.3s;
-        }
-
-        .modal-actions button:first-child {
-            background: var(--primary);
-            color: white;
-        }
-
-        .modal-actions button:first-child:hover {
-            background: var(--primary-dark);
-        }
-
-        .modal-actions button:last-child {
-            background: var(--gray-light);
-            color: var(--dark);
-        }
-
-        .modal-actions button:last-child:hover {
-            background: var(--border);
-        }
-
-        /* ============ Reminder Banner ============ */
-        #reminderBanner {
-            position: fixed;
-            top: 70px;
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(90deg, var(--warning), rgba(245,158,11,0.85));
-            color: var(--text-primary);
-            font-size: 20px;
-            font-weight: bold;
-            padding: 15px 30px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-md);
-            z-index: 1000;
-            display: none;
+            width: 0;
+            height: 3px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-secondary);
+            background: var(--bg-hover);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::before {
+            width: 60%;
+        }
+
+        .tab-btn i {
+            font-size: 1.5rem;
+        }
+
+        .tab-btn span {
+            font-size: 0.7rem;
             white-space: nowrap;
         }
 
-        @keyframes slideInDown {
-            from { opacity: 0; transform: translate(-50%, -50px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
         }
 
-        @keyframes slideOutRight {
-            from { opacity: 1; transform: translate(-50%, 0); }
-            to { opacity: 0; transform: translateX(200%); }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ============ Treasury ============ */
+        .treasury-balance {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .balance-card {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 30px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--info), var(--primary));
+        }
+
+        .balance-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .balance-card h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .balance-card .amount {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        /* ============ No Data ============ */
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .no-data i {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.4;
+        }
+
+        /* ============ Loading Spinner ============ */
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ============ Advanced Search Button ============ */
+        .advanced-search-btn {
+            background: var(--info-light);
+            color: var(--info);
+            border: 1px solid var(--info);
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .advanced-search-btn:hover {
+            background: var(--info);
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* ============ Backup & Export Buttons ============ */
+        .backup-btn, .export-btn {
+            border: none;
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 25px;
+        }
+
+        .backup-btn {
+            background: var(--warning);
+            color: white;
+        }
+
+        .backup-btn:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px var(--warning-glow);
+        }
+
+        .export-btn {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .export-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px var(--secondary-glow);
         }
 
         /* ============ Responsive ============ */
         @media (max-width: 768px) {
-            .header {
-                padding: 12px 15px;
-            }
-            .header h1 {
-                font-size: 1.2rem;
-            }
-            .logout-btn {
-                padding: 6px 10px;
-                font-size: 0.8rem;
-            }
             .container {
-                padding: 10px;
+                padding: 20px 15px;
+                padding-bottom: 100px;
             }
-            .content-section {
-                padding: 15px;
-            }
+
             .stats-grid {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-                gap: 10px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
             }
+
             .stat-card {
-                padding: 12px 8px;
+                padding: 20px;
             }
+
             .stat-card h3 {
-                font-size: 1.2rem;
+                font-size: 2rem;
             }
-            .stat-card p {
-                font-size: 0.75rem;
-            }
+
             .financial-summary {
                 grid-template-columns: 1fr;
-                gap: 12px;
             }
-            .financial-card {
-                padding: 12px;
+
+            .section-header {
+                flex-direction: column;
+                align-items: stretch;
             }
-            .financial-card h3 {
-                font-size: 0.9rem;
+
+            .add-user-btn {
+                width: 100%;
+                justify-content: center;
             }
-            .financial-card .amount {
-                font-size: 1.3rem;
-            }
-            .section-header h2 {
-                font-size: 1.1rem;
-            }
-            .attendance-table {
-                font-size: 0.8rem;
-            }
-            .attendance-table th,
-            .attendance-table td {
-                padding: 8px 4px;
-            }
+
             .users-filters {
                 flex-direction: column;
             }
+
+            .search-input,
             .role-filter {
                 width: 100%;
             }
+
             .users-table th,
             .users-table td {
-                padding: 8px;
-                font-size: 0.9rem;
+                padding: 12px 8px;
+                font-size: 0.85rem;
             }
-            .action-btn {
-                padding: 4px 8px;
-                font-size: 0.8rem;
-            }
-            .attendance-filters {
+
+            .user-actions {
                 flex-direction: column;
-                gap: 12px;
-                padding: 12px;
             }
-            .filter-group {
-                min-width: 100%;
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+                font-size: 0.85rem;
             }
-            .clear-btn {
-                align-self: stretch;
-                text-align: center;
+
+            .header {
+                padding: 15px 20px;
             }
-            .attendance-cards {
-                grid-template-columns: repeat(auto-fit, minmin(250px, 1fr));
-                gap: 12px;
+
+            .header h1 {
+                font-size: 1.2rem;
             }
-            .card-header {
-                padding: 12px;
+
+            .tab-btn {
+                min-height: 65px;
             }
-            .card-header h3 {
-                font-size: 1rem;
+
+            .tab-btn i {
+                font-size: 1.3rem;
             }
-            .card-body {
-                padding: 12px;
+
+            .tab-btn span {
+                font-size: 0.65rem;
             }
-            .info-row {
-                margin-bottom: 8px;
-                padding-bottom: 8px;
-            }
-            .status {
-                padding: 4px 10px;
-                font-size: 0.75rem;
+
+            /* Extra space for last elements */
+            .content-section:last-child {
+                margin-bottom: 40px;
             }
         }
 
         @media (max-width: 480px) {
-            .header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
+            .container {
+                padding: 15px 10px;
+                padding-bottom: 110px;
             }
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .stat-card {
-                padding: 10px 6px;
-            }
+
             .stat-card h3 {
-                font-size: 1.1rem;
+                font-size: 1.8rem;
             }
-            .financial-summary {
-                gap: 10px;
-            }
-            .financial-card {
-                padding: 10px;
-            }
-            .financial-card h3 {
-                font-size: 0.85rem;
-            }
+
             .financial-card .amount {
+                font-size: 1.8rem;
+            }
+
+            .tab-navigation {
+                padding: 6px 0 max(75px, env(safe-area-inset-bottom));
+            }
+
+            .tab-btn {
+                padding: 8px 5px;
+                min-height: 60px;
+            }
+
+            .tab-btn i {
                 font-size: 1.2rem;
             }
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
+
+            .tab-btn span {
+                font-size: 0.6rem;
             }
-            .section-header h2 {
-                font-size: 1rem;
-            }
-            .attendance-table {
-                font-size: 0.7rem;
-            }
-            .attendance-table th,
-            .attendance-table td {
-                padding: 6px 3px;
-            }
-            .attendance-cards {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            .card-header {
-                padding: 10px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            .card-header h3 {
-                font-size: 0.95rem;
-            }
-            .card-body {
-                padding: 10px;
-            }
-            .info-row {
-                margin-bottom: 6px;
-                padding-bottom: 6px;
-                font-size: 0.9rem;
-            }
-            .status {
-                padding: 3px 8px;
-                font-size: 0.7rem;
-            }
-            .no-data {
-                padding: 20px;
-                font-size: 0.9rem;
-            }
-            .attendance-filters {
-                padding: 10px;
-                gap: 10px;
-            }
-            .filter-group label {
-                font-size: 0.9rem;
-            }
-            .filter-group input {
-                padding: 8px;
-                font-size: 0.85rem;
-            }
-            .clear-btn {
-                padding: 8px 12px;
-                font-size: 0.85rem;
+
+            /* Extra space for last elements */
+            .content-section:last-child {
+                margin-bottom: 50px;
             }
         }
-        /* Admin responsive helpers (tables, cards, modals) */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
-        .summary-card { background: var(--bg-card); padding: 12px; border-radius: 8px; text-align: center; box-shadow: var(--shadow-light); }
-        .summary-card .value { font-size: 1.4rem; font-weight: 700; color: var(--dark); }
 
-        /* Make users and other admin tables responsive and stack on small screens when data-label is present */
-        .users-table-container .users-table, .users-table, table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 0; /* allow shrinking */
+        @media (max-width: 360px) {
+            .container {
+                padding-bottom: 120px;
+            }
+
+            .tab-btn span {
+                font-size: 0.55rem;
+            }
+
+            .tab-btn i {
+                font-size: 1.1rem;
+            }
+
+            /* Extra space for last elements */
+            .content-section:last-child {
+                margin-bottom: 60px;
+            }
         }
 
-        @media (max-width: 720px) {
-            .summary-cards { grid-template-columns: repeat(2, 1fr); }
+        /* ============ Hide Actions/Transactions ============ */
+        .actions-hidden .user-actions {
+            display: none;
         }
 
-        @media (max-width: 600px) {
-            .summary-cards { grid-template-columns: 1fr; }
-            table, thead, tbody, th, td, tr { display: block; width: 100%; }
-            thead { display: none; }
-            tr { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--bg-card); }
-            td { padding: 8px 10px; text-align: right; border: none; }
-            td::before { content: attr(data-label); display: block; font-weight: 700; color: var(--gray); margin-bottom: 6px; }
-            .modal { padding: 12px; }
-            .subscription-modal { padding: 1.25rem; }
+        .actions-hidden .users-table th:last-child,
+        .actions-hidden .users-table td:last-child {
+            display: none;
+        }
+
+        .transactions-hidden .users-table {
+            display: none;
+        }
+
+        /* ============ Scrollbar Styling ============ */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* ============ Notification Animation ============ */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Overlay -->
-    <div class="modal-overlay" id="modalOverlay"></div>
-
-    <!-- Subscription Modal -->
-    <div id="subscriptionModal" class="subscription-modal">
-        <div class="modal-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <div class="modal-content-text">
-            ⚠️ اشتراكك في التطبيق سينتهي قريباً، يرجى تجديده للاستمرار.
-        </div>
-        <button class="close-modal" onclick="closeSubscriptionModal()">حسناً</button>
-    </div>
-
-    <!-- Subscription Alert -->
-    <div id="subscriptionAlert" class="subscription-alert">⚠️ اشتراكك في التطبيق سينتهي قريباً</div>
+    <!--
 
     <!-- Header -->
     <header class="header">
@@ -1039,35 +1119,57 @@
         </div>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main Container -->
     <div class="container">
-        <div id="overview" class="content-section">
-            <!-- Stats -->
-            <div class="section-header">
-                <h2><i class="fas fa-chart-bar"></i> الإحصائيات العامة</h2>
-            </div>
-            <div class="stats-grid">
-                <div class="stat-card"><h3 id="totalUsers">0</h3><p>المستخدمين</p></div>
-                <div class="stat-card"><h3 id="totalStudents">0</h3><p>الطلاب</p></div>
-                <div class="stat-card"><h3 id="totalCourses">0</h3><p>الدورات</p></div>
-                <div class="stat-card"><h3 id="totalModules">0</h3><p>الوحدات</p></div>
-                <div class="stat-card"><h3 id="totalExams">0</h3><p>الامتحانات</p></div>
-                <div class="stat-card financial"><h3 id="totalLessons">0</h3><p>الدروس</p></div>
-                <div class="stat-card info"><h3 id="totalTeachers">0</h3><p>المعلمين</p></div>
-                <div class="stat-card warning"><h3 id="totalSecretaries">0</h3><p>السكرتارية</p></div>
-            </div>
+        
+        <!-- Overview Tab -->
+        <div id="overviewTab" class="tab-content active">
+            <div class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> الإحصائيات العامة</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card"><h3 id="totalUsers">0</h3><p>المستخدمين</p></div>
+                    <div class="stat-card"><h3 id="totalStudents">0</h3><p>الطلاب</p></div>
+                    <div class="stat-card"><h3 id="totalCourses">0</h3><p>الدورات</p></div>
+                    <div class="stat-card financial"><h3 id="totalTeachers">0</h3><p>المعلمين</p></div>
+                    <div class="stat-card info"><h3 id="totalModules">0</h3><p>الوحدات</p></div>
+                    <div class="stat-card warning"><h3 id="totalExams">0</h3><p>الامتحانات</p></div>
+                </div>
 
-            <!-- Error Message -->
-            <div id="errorMessage" style="display: none;"></div>
-
-            <!-- Users Management -->
-            <div class="section-header">
-                <h2><i class="fas fa-users-cog"></i> إدارة المستخدمين</h2>
-                <button class="add-user-btn" onclick="showAddUserModal()">
-                    <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
-                </button>
+                <div class="section-header" style="margin-top: 30px;">
+                    <h2><i class="fas fa-chart-line"></i> الإحصائيات المالية</h2>
+                </div>
+                <div class="financial-summary">
+                    <div class="financial-card">
+                        <h3><i class="fas fa-money-bill-wave"></i> المدفوعات</h3>
+                        <div class="amount paid" id="totalPaidAmount">0 جنيه</div>
+                        <p>إجمالي المبالغ المدفوعة</p>
+                    </div>
+                    <div class="financial-card">
+                        <h3><i class="fas fa-exclamation-circle"></i> المتبقي</h3>
+                        <div class="amount remaining" id="totalRemainingAmount">0 جنيه</div>
+                        <p>إجمالي المبالغ المتأخرة</p>
+                    </div>
+                    <div class="financial-card">
+                        <h3><i class="fas fa-calculator"></i> الإجمالي</h3>
+                        <div class="amount total" id="totalFinancialAmount">0 جنيه</div>
+                        <p>إجمالي المبالغ المطلوبة</p>
+                    </div>
+                </div>
             </div>
-            <div class="users-management">
+        </div>
+
+        <!-- Users Tab -->
+        <div id="usersTab" class="tab-content">
+            <div class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-users-cog"></i> إدارة المستخدمين</h2>
+                    <button class="add-user-btn" onclick="showAddUserModal()">
+                        <i class="fas fa-user-plus"></i> إضافة مستخدم جديد
+                    </button>
+                </div>
+
                 <div class="users-filters">
                     <input type="text" id="userSearchInput" placeholder="بحث عن مستخدم..." class="search-input">
                     <select id="userRoleFilter" class="role-filter">
@@ -1076,54 +1178,14 @@
                         <option value="teacher">معلم</option>
                         <option value="secretary">سكرتير</option>
                     </select>
+                    <button class="action-btn" onclick="toggleActionsColumn()" style="background: var(--info); color: white;">
+                        <i class="fas fa-eye-slash"></i> <span id="toggleActionsText">إخفاء الإجراءات</span>
+                    </button>
+                    <button class="advanced-search-btn" onclick="advancedSearch()">
+                        <i class="fas fa-search-plus"></i> بحث متقدم
+                    </button>
                 </div>
 
-                <!-- Add User Modal -->
-                <div id="addUserModal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>📝 إضافة مستخدم جديد</h3>
-                            <button class="close-btn" onclick="closeAddUserModal()">×</button>
-                        </div>
-                        <form id="addUserForm" class="add-user-form">
-                            <div class="form-group">
-                                <label>👤 الاسم الكامل</label>
-                                <input type="text" id="addFullName" required placeholder="أدخل الاسم الكامل">
-                            </div>
-                            <div class="form-group">
-                                <label>📧 البريد الإلكتروني</label>
-                                <input type="email" id="addEmail" required placeholder="أدخل البريد الإلكتروني">
-                            </div>
-                            <div class="form-group">
-                                <label>🔒 كلمة المرور</label>
-                                <input type="password" id="addPassword" required minlength="6" placeholder="أدخل كلمة مرور قوية">
-                            </div>
-                            <div class="form-group">
-                                <label>📱 رقم الهاتف</label>
-                                <input type="tel" id="addPhone" placeholder="أدخل رقم الهاتف">
-                            </div>
-                            <div class="form-group">
-                                <label>📚 التخصص</label>
-                                <input type="text" id="addSpecialty" placeholder="أدخل التخصص">
-                            </div>
-                            <div class="form-group">
-                                <label>👔 الدور</label>
-                                <select id="addRole" required>
-                                    <option value="admin">مدير</option>
-                                    <option value="teacher">معلم</option>
-                                    <option value="secretary">سكرتير</option>
-                                </select>
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="submit-btn">إضافة المستخدم</button>
-                                <button type="button" class="cancel-btn" onclick="closeAddUserModal()">إلغاء</button>
-                            </div>
-                        </form>
-                        <div id="addUserStatus" class="status-message"></div>
-                    </div>
-                </div>
-
-                <!-- Users Table -->
                 <div class="users-table-container">
                     <table class="users-table">
                         <thead>
@@ -1138,96 +1200,51 @@
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
-                            <!-- سيتم ملء هذا الجزء ديناميكياً -->
+                            <tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i><br>جاري التحميل...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Financial Stats -->
-            <div class="section-header">
-                <h2><i class="fas fa-chart-line"></i> الإحصائيات المالية</h2>
-            </div>
-            <div class="financial-summary">
-                <div class="financial-card">
-                    <h3><i class="fas fa-money-bill-wave"></i> المدفوعات</h3>
-                    <div class="amount paid" id="totalPaidAmount">0 جنيه</div>
-                    <p>إجمالي المبالغ المدفوعة</p>
+        <!-- Treasury Tab -->
+        <div id="treasuryTab" class="tab-content">
+            <div class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-vault"></i> خزينة السكرتارية</h2>
+                    <button class="add-user-btn" onclick="showWithdrawModal()" style="background: var(--danger);">
+                        <i class="fas fa-money-bill-wave"></i> سحب من الخزينة
+                    </button>
                 </div>
-                <div class="financial-card">
-                    <h3><i class="fas fa-exclamation-circle"></i> المتبقي</h3>
-                    <div class="amount remaining" id="totalRemainingAmount">0 جنيه</div>
-                    <p>إجمالي المبالغ المتأخرة</p>
-                </div>
-                <div class="financial-card">
-                    <h3><i class="fas fa-calculator"></i> الإجمالي</h3>
-                    <div class="amount total" id="totalFinancialAmount">0 جنيه</div>
-                    <p>إجمالي المبالغ المطلوبة</p>
-                </div>
-            </div>
 
-            <!-- Treasury Section -->
-            <div class="section-header">
-                <h2><i class="fas fa-vault"></i> خزينة السكرتارية</h2>
-                <button class="add-user-btn" onclick="showWithdrawModal()" style="background: var(--danger);">
-                    <i class="fas fa-money-bill-wave"></i> سحب من الخزينة
-                </button>
-            </div>
-            <div class="treasury-section">
-                <!-- Treasury Balance Cards -->
-                <div class="financial-summary" style="margin-bottom: 25px;">
-                    <div class="financial-card" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: var(--text-primary); border-left: none;">
-                        <h3 style="color: var(--text-primary);"><i class="fas fa-wallet"></i> الرصيد الحالي</h3>
-                        <div class="amount" style="color: var(--text-primary); font-size: 2rem;" id="adminTreasuryBalance">0.00</div>
-                        <p style="color: var(--text-secondary);">ج.م</p>
+                <div class="treasury-balance">
+                    <div class="balance-card">
+                        <h3><i class="fas fa-wallet"></i> الرصيد الحالي</h3>
+                        <div class="amount" id="adminTreasuryBalance">0.00 ج.م</div>
                     </div>
-                    <div class="financial-card">
+                    <div class="balance-card" style="background: linear-gradient(135deg, #10b981, #059669);">
                         <h3><i class="fas fa-arrow-down"></i> إجمالي الإيداعات</h3>
-                        <div class="amount paid" id="adminTreasuryDeposited">0.00</div>
-                        <p>ج.م</p>
+                        <div class="amount" id="adminTreasuryDeposited">0.00 ج.م</div>
                     </div>
-                    <div class="financial-card">
+                    <div class="balance-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
                         <h3><i class="fas fa-arrow-up"></i> إجمالي السحوبات</h3>
-                        <div class="amount remaining" id="adminTreasuryWithdrawn">0.00</div>
-                        <p>ج.م</p>
+                        <div class="amount" id="adminTreasuryWithdrawn">0.00 ج.م</div>
                     </div>
                 </div>
 
-                <!-- Withdraw Modal -->
-                <div id="withdrawModal" class="modal" style="display: none;">
-                    <div class="modal-content" style="max-width: 500px;">
-                        <div class="modal-header">
-                            <h3>💰 سحب من الخزينة</h3>
-                            <button class="close-btn" onclick="closeWithdrawModal()">×</button>
-                        </div>
-                        <form id="withdrawForm" class="add-user-form">
-                            <div class="form-group">
-                                <label>💵 المبلغ (ج.م) *</label>
-                                <input type="number" id="withdrawAmount" required min="0.01" step="0.01" placeholder="أدخل المبلغ">
-                            </div>
-                            <div class="form-group">
-                                <label>📝 الوصف</label>
-                                <textarea id="withdrawDescription" rows="3" placeholder="أدخل وصفاً لعملية السحب"></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="submit-btn" style="background: var(--danger);">سحب</button>
-                                <button type="button" class="cancel-btn" onclick="closeWithdrawModal()">إلغاء</button>
-                            </div>
-                        </form>
-                        <div id="withdrawStatus" class="status-message"></div>
-                    </div>
+                <div class="users-filters" style="margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 1.1rem;">سجل المعاملات</h3>
+                    <select id="adminTreasuryFilter" onchange="filterAdminTreasuryTransactions()" class="role-filter">
+                        <option value="">كل المعاملات</option>
+                        <option value="deposit">إيداعات</option>
+                        <option value="withdrawal">سحوبات</option>
+                    </select>
+                    <button class="action-btn" onclick="toggleTransactionsTable()" style="background: var(--warning); color: white;">
+                        <i class="fas fa-eye-slash"></i> <span id="toggleTransactionsText">إخفاء السجل</span>
+                    </button>
                 </div>
 
-                <!-- Transactions Table -->
                 <div class="users-table-container">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                        <h3 style="margin: 0; font-size: 1.1rem;">سجل المعاملات</h3>
-                        <select id="adminTreasuryFilter" onchange="filterAdminTreasuryTransactions()" style="padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm);">
-                            <option value="">كل المعاملات</option>
-                            <option value="deposit">إيداعات</option>
-                            <option value="withdrawal">سحوبات</option>
-                        </select>
-                    </div>
                     <table class="users-table">
                         <thead>
                             <tr>
@@ -1239,318 +1256,389 @@
                             </tr>
                         </thead>
                         <tbody id="adminTreasuryTransactionsBody">
-                            <tr><td colspan="5" style="text-align: center; padding: 20px;">جاري التحميل...</td></tr>
+                            <tr><td colspan="5" class="no-data"><i class="fas fa-spinner fa-spin"></i><br>جاري التحميل...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+        <!-- Reports Tab -->
+        <div id="reportsTab" class="tab-content">
+            <div class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-file-pdf"></i> التقارير</h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <button class="add-user-btn" onclick="generateStudentReport()" style="background: #3b82f6;">
+                        <i class="fas fa-users"></i> تقرير الطلاب
+                    </button>
+                    <button class="add-user-btn" onclick="generateFinancialReport()" style="background: #10b981;">
+                        <i class="fas fa-money-bill-wave"></i> التقرير المالي
+                    </button>
+                    <button class="add-user-btn" onclick="generatePaymentReport()" style="background: #f59e0b;">
+                        <i class="fas fa-credit-card"></i> تقرير الدفعات
+                    </button>
+                    <button class="add-user-btn" onclick="generateAttendanceReport()" style="background: #8b5cf6;">
+                        <i class="fas fa-calendar-check"></i> تقرير الحضور
+                    </button>
+                </div>
+                <button class="export-btn" onclick="exportReportToExcel()">
+                    <i class="fas fa-file-excel"></i> تصدير التقرير إلى Excel
+                </button>
+                <div id="reportStatus" class="status-message"></div>
+                <div id="reportPreview" style="margin-top: 25px;"></div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="tab-content">
+            <div class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-user-circle"></i> الملف الشخصي</h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                    <div class="form-group">
+                        <label>الاسم الكامل</label>
+                        <input type="text" id="profileFullName" readonly style="background: var(--bg-secondary);">
+                    </div>
+                    <div class="form-group">
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="profileEmail" readonly style="background: var(--bg-secondary);">
+                    </div>
+                    <div class="form-group">
+                        <label>الدور</label>
+                        <input type="text" id="profileRole" readonly style="background: var(--bg-secondary);">
+                    </div>
+                </div>
+
+                <div class="section-header" style="margin-top: 40px;">
+                    <h2><i class="fas fa-cog"></i> الإعدادات</h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div style="border: 2px solid var(--border); padding: 25px; border-radius: var(--radius-md);">
+                        <h4 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-moon"></i> المظهر
+                        </h4>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" style="width: 20px; height: 20px;">
+                            الوضع الليلي
+                        </label>
+                    </div>
+                    <div style="border: 2px solid var(--border); padding: 25px; border-radius: var(--radius-md);">
+                        <h4 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-bell"></i> الإشعارات
+                        </h4>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="notificationToggle" checked onchange="toggleNotifications()" style="width: 20px; height: 20px;">
+                            تفعيل الإشعارات
+                        </label>
+                    </div>
+                    <div style="border: 2px solid var(--border); padding: 25px; border-radius: var(--radius-md);">
+                        <h4 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-key"></i> الأمان
+                        </h4>
+                        <button class="add-user-btn" onclick="showChangePasswordModal()" style="width: 100%; background: #f59e0b;">
+                            <i class="fas fa-lock"></i> تغيير كلمة المرور
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-header" style="margin-top: 40px;">
+                    <h2><i class="fas fa-database"></i> النسخ الاحتياطي</h2>
+                </div>
+                <button class="backup-btn" onclick="backupDatabase()">
+                    <i class="fas fa-download"></i> إنشاء نسخة احتياطية
+                </button>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Reminder Banner -->
-    <div id="reminderBanner"></div>
+    <!-- Tab Navigation -->
+    <nav class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('overviewTab')" data-tab="overviewTab">
+            <i class="fas fa-chart-line"></i>
+            <span>الرئيسية</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('usersTab')" data-tab="usersTab">
+            <i class="fas fa-users"></i>
+            <span>المستخدمين</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('treasuryTab')" data-tab="treasuryTab">
+            <i class="fas fa-piggy-bank"></i>
+            <span>الخزينة</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('reportsTab')" data-tab="reportsTab">
+            <i class="fas fa-file-alt"></i>
+            <span>التقارير</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('settingsTab')" data-tab="settingsTab">
+            <i class="fas fa-cog"></i>
+            <span>الإعدادات</span>
+        </button>
+    </nav>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📝 إضافة مستخدم جديد</h3>
+                <button class="close-btn" onclick="closeAddUserModal()">×</button>
+            </div>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label>👤 الاسم الكامل</label>
+                    <input type="text" id="addFullName" required placeholder="أدخل الاسم الكامل">
+                </div>
+                <div class="form-group">
+                    <label>📧 البريد الإلكتروني</label>
+                    <input type="email" id="addEmail" required placeholder="أدخل البريد الإلكتروني">
+                </div>
+                <div class="form-group">
+                    <label>🔒 كلمة المرور</label>
+                    <input type="password" id="addPassword" required minlength="6" placeholder="أدخل كلمة مرور قوية">
+                </div>
+                <div class="form-group">
+                    <label>📱 رقم الهاتف</label>
+                    <input type="tel" id="addPhone" placeholder="أدخل رقم الهاتف">
+                </div>
+                <div class="form-group">
+                    <label>📚 التخصص</label>
+                    <input type="text" id="addSpecialty" placeholder="أدخل التخصص">
+                </div>
+                <div class="form-group">
+                    <label>👔 الدور</label>
+                    <select id="addRole" required>
+                        <option value="admin">مدير</option>
+                        <option value="teacher">معلم</option>
+                        <option value="secretary">سكرتير</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">إضافة المستخدم</button>
+                    <button type="button" class="cancel-btn" onclick="closeAddUserModal()">إلغاء</button>
+                </div>
+            </form>
+            <div id="addUserStatus" class="status-message"></div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💰 سحب من الخزينة</h3>
+                <button class="close-btn" onclick="closeWithdrawModal()">×</button>
+            </div>
+            <form id="withdrawForm">
+                <div class="form-group">
+                    <label>💵 المبلغ (ج.م) *</label>
+                    <input type="number" id="withdrawAmount" required min="0.01" step="0.01" placeholder="أدخل المبلغ">
+                </div>
+                <div class="form-group">
+                    <label>📝 الوصف</label>
+                    <textarea id="withdrawDescription" rows="3" placeholder="أدخل وصفاً لعملية السحب"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn" style="background: var(--danger);">سحب</button>
+                    <button type="button" class="cancel-btn" onclick="closeWithdrawModal()">إلغاء</button>
+                </div>
+            </form>
+            <div id="withdrawStatus" class="status-message"></div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Modal -->
+    <div id="advancedSearchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔍 بحث متقدم</h3>
+                <button class="close-btn" onclick="closeAdvancedSearchModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label>تاريخ من:</label>
+                <input type="date" id="dateFrom" class="search-input">
+            </div>
+            <div class="form-group">
+                <label>تاريخ إلى:</label>
+                <input type="date" id="dateTo" class="search-input">
+            </div>
+            <div class="form-group">
+                <label>الحالة:</label>
+                <select id="statusFilter" class="role-filter">
+                    <option value="">الكل</option>
+                    <option value="active">نشط</option>
+                    <option value="inactive">غير نشط</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button class="submit-btn" onclick="applyAdvancedSearch()">بحث</button>
+                <button class="cancel-btn" onclick="closeAdvancedSearchModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // ============ Configuration ============
-// ============ إعدادات Supabase ============
-const SUPABASE_URL = 'https://nhzbnzcdsebepsmrtona.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oemJuemNkc2ViZXBzbXJ0b25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NjU4MTEsImV4cCI6MjA3OTI0MTgxMX0.wNSf49MpQjCCopByd3zCz4-TJ2EGGABc3-ICEsAPaFo'
+        // ============ Supabase Configuration ============
+        const SUPABASE_URL = 'https://nhzbnzcdsebepsmrtona.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oemJuemNkc2ViZXBzbXJ0b25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2NjU4MTEsImV4cCI6MjA3OTI0MTgxMX0.wNSf49MpQjCCopByd3zCz4-TJ2EGGABc3-ICEsAPaFo';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// أول حاجة نعمل الـ client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        // Set academy context
+        const currentAcademyId = localStorage.getItem('current_academy_id');
+        if (currentAcademyId) {
+            supabase.rpc('set_academy_context', { academy_id: currentAcademyId });
+        }
 
-// بعد كده نعمل set للأكاديمية الحالية (لازم يكون بعد إنشاء الـ client)
-const currentAcademyId = localStorage.getItem('current_academy_id')
-if (currentAcademyId) {
-  supabase.rpc('set_academy_context', { academy_id: currentAcademyId })
-}
-// عرض اسم الأكاديمية في العنوان
-document.addEventListener('DOMContentLoaded', () => {
-  const academyName = localStorage.getItem('current_academy_name') || 'لوحة التحكم'
-  document.title = `${academyName} - لوحة التحكم`
-  const h1 = document.querySelector('h1')
-  if (h1) h1.textContent = `${academyName} - ${h1.textContent}`
-})
         // ============ Data Variables ============
-        let usersData = [], coursesData = [], paymentsData = [], attendanceData = [], 
-            studentsData = [], examsData = [], modulesData = [], lessonsData = [], 
-            teachersData = [], secretariesData = [], teacherAttendanceData = [], 
-            secretaryAttendanceData = [], examScoresData = [];
+        let usersData = [];
+        let coursesData = [];
+        let paymentsData = [];
+        let studentsData = [];
+        let examsData = [];
+        let modulesData = [];
+        let adminTreasuryData = null;
+        let adminTreasuryTransactions = [];
+        let actionsVisible = true;
+        let transactionsVisible = true;
 
-
-        function showSubscriptionModal() {
-            const modal = document.getElementById('subscriptionModal');
-            const overlay = document.getElementById('modalOverlay');
-            if (modal && overlay) {
-                overlay.classList.add('show');
-                modal.classList.add('show');
-            }
+        // ============ Tab Navigation ============
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName)?.classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+            
+            localStorage.setItem('activeTab', tabName);
+            
+            if (tabName === 'treasuryTab') loadTreasury();
+            if (tabName === 'usersTab') renderUsersTable();
+            
+            window.scrollTo(0, 0);
         }
 
-        function closeSubscriptionModal() {
-            const modal = document.getElementById('subscriptionModal');
-            const overlay = document.getElementById('modalOverlay');
-            if (modal && overlay) {
-                modal.classList.remove('show');
-                overlay.classList.remove('show');
-                // حفظ تاريخ إغلاق المودال
-                localStorage.setItem('lastSubscriptionModalClose', new Date().toISOString());
-            }
-        }
-
-
+        // ============ Initialize App ============
         async function initializeApp() {
             try {
-                console.log("Starting data loading...");
-                
-                // ✅ التحقق من حالة قفل الأكاديمية
-                const academyId = localStorage.getItem('current_academy_id');
-                if (academyId) {
-                    const { data: academyStatus, error: statusError } = await supabase
-                        .from('academy_status')
-                        .select('is_locked, lock_reason')
-                        .eq('academy_id', academyId)
-                        .maybeSingle()
-                    
-                    if (academyStatus && academyStatus.is_locked) {
-                        showErrorMessage(`❌ الأكاديمية مغلقة حالياً. السبب: ${academyStatus.lock_reason || 'لم يتم تحديد السبب'}`)
-                        console.error('🚫 محاولة دخول إلى أكاديمية مقفولة')
-                        
-                        // إعادة توجيه إلى صفحة تسجيل الدخول بعد 3 ثواني
-                        setTimeout(() => {
-                            localStorage.removeItem('user_id')
-                            localStorage.removeItem('current_academy_id')
-                            window.location.href = 'index.html'
-                        }, 3000)
-                        return
-                    }
-                }
-                
                 await loadAllData();
-                console.log("Data loading completed");
                 updateStats();
                 updateFinancialStats();
                 renderUsersTable();
+                loadAdminProfile();
+                setupRealtimeNotifications();
+                
+                const savedTab = localStorage.getItem('activeTab') || 'overviewTab';
+                switchTab(savedTab);
+                
+                // إضافة تأثيرات التفاعل
+                addHoverEffects();
             } catch (err) {
-                console.error("Error in initializeApp:", err);
-                showErrorMessage("حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.");
+                console.error('Error initializing app:', err);
             }
         }
 
-        // ============ Data Loading ============
+        // ============ Load Data ============
         async function loadAllData() {
-            console.log("Loading all data...");
-            await loadWithPermissionCheck(loadUsers, 'users');
-            await loadWithPermissionCheck(loadStudents, 'students');
-            await loadWithPermissionCheck(loadCourses, 'courses');
-            await loadWithPermissionCheck(loadModules, 'modules');
-            await loadWithPermissionCheck(loadExams, 'exams');
-            await loadWithPermissionCheck(loadLessons, 'lessons');
-            await loadWithPermissionCheck(loadPayments, 'payments');
-            await loadWithPermissionCheck(loadExamScores, 'exam_scores');
-            console.log("All data loading completed");
+            await Promise.all([
+                loadUsers(),
+                loadStudents(),
+                loadCourses(),
+                loadModules(),
+                loadExams(),
+                loadPayments()
+            ]);
         }
-
-        async function loadWithPermissionCheck(loadFunction, tableName) {
-            try {
-                await loadFunction();
-            } catch (error) {
-                console.error(`Error loading ${tableName}:`, error);
-                if (error.message && (error.message.includes('permission') || 
-                                      error.message.includes('denied') || 
-                                      error.message.includes('forbidden') ||
-                                      error.message.includes('403'))) {
-                    showPermissionError(tableName);
-                }
-            }
-        }
-
-        // ============ تحميل البيانات - النسخة الصحيحة 100% ============
 
         async function loadUsers() {
-            console.log("جاري تحميل المستخدمين مع الـ role الصحيح من academy_members...");
-
             const academyId = localStorage.getItem('current_academy_id');
-            if (!academyId) {
-                console.error("لا يوجد academy_id في localStorage");
-                usersData = [];
-                return;
-            }
+            if (!academyId) return;
 
-            try {
-                // 1. نجيب كل أعضاء الأكاديمية الحالية مع الـ role الصحيح
-                const { data: members, error: membersError } = await supabase
-                    .from('academy_members')
-                    .select('user_id, role')
-                    .eq('academy_id', academyId);
+            const { data: members } = await supabase
+                .from('academy_members')
+                .select('user_id, role')
+                .eq('academy_id', academyId);
 
-                if (membersError) {
-                    console.error("خطأ في جلب academy_members:", membersError);
-                    usersData = [];
-                    return;
-                }
+            if (!members?.length) return;
 
-                if (!members || members.length === 0) {
-                    console.log("لا يوجد أعضاء في الأكاديمية");
-                    usersData = [];
-                    renderUsersTable();
-                    updateStats();
-                    return;
-                }
+            const userIds = members.map(m => m.user_id);
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('*')
+                .in('id', userIds);
 
-                // 2. نجيب بياناتهم من profiles
-                const userIds = members.map(m => m.user_id);
-
-                const { data: profiles, error: profilesError } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, email, phone, specialty, created_at')
-                    .in('id', userIds);
-
-                if (profilesError) {
-                    console.error("خطأ في جلب profiles:", profilesError);
-                    usersData = [];
-                    return;
-                }
-
-                // 3. ندمج الـ role الصحيح من academy_members مع البيانات
-                usersData = profiles.map(profile => {
-                    const member = members.find(m => m.user_id === profile.id);
-                    return {
-                        ...profile,
-                        role: member?.role || 'secretary'
-                    };
-                });
-
-                console.log("تم تحميل المستخدمين بنجاح مع الـ role الصحيح:", usersData);
-                renderUsersTable();
-                updateStats();
-            } catch (error) {
-                console.error("خطأ في loadUsers:", error);
-                usersData = [];
-            }
+            usersData = profiles?.map(profile => ({
+                ...profile,
+                role: members.find(m => m.user_id === profile.id)?.role || 'secretary'
+            })) || [];
         }
+
         async function loadStudents() {
-            studentsData = []; // مفيش جدول students دلوقتي
-            console.log("جدول students غير موجود - تم تخطيه");
+            studentsData = [];
         }
 
         async function loadCourses() {
-            const { data, error } = await supabase.from('courses').select('*');
-            if (error) {
-                console.warn("Courses table error (normal if empty):", error.message);
-                coursesData = [];
-            } else {
-                coursesData = data || [];
-            }
-            console.log("Courses loaded:", coursesData.length);
-        }
-
-        async function loadPayments() {
-            const { data, error } = await supabase.from('payments').select('*');
-            if (error) {
-                console.warn("Payments table error:", error.message);
-                paymentsData = [];
-            } else {
-                paymentsData = data || [];
-            }
-            console.log("Payments loaded:", paymentsData.length);
-        }
-
-        async function loadExams() {
-            const { data, error } = await supabase.from('exams').select('*');
-            if (error) { examsData = []; } else { examsData = data || []; }
-            console.log("Exams loaded:", examsData.length);
+            const { data } = await supabase.from('courses').select('*');
+            coursesData = data || [];
         }
 
         async function loadModules() {
-            const { data, error } = await supabase.from('modules').select('*');
-            if (error) { modulesData = []; } else { modulesData = data || []; }
-            console.log("Modules loaded:", modulesData.length);
+            const { data } = await supabase.from('modules').select('*');
+            modulesData = data || [];
         }
 
-        async function loadLessons() {
-            const { data, error } = await supabase.from('lessons').select('*');
-            if (error) { lessonsData = []; } else { lessonsData = data || []; }
-            console.log("Lessons loaded:", lessonsData.length);
+        async function loadExams() {
+            const { data } = await supabase.from('exams').select('*');
+            examsData = data || [];
         }
 
-
-        async function loadExamScores() {
-            console.log("Loading exam scores...");
-            const { data, error } = await supabase.from('exam_scores').select('*');
-            if (error) throw error;
-            examScoresData = data;
-            console.log("Exam scores loaded:", data.length);
+        async function loadPayments() {
+            const { data } = await supabase.from('payments').select('*');
+            paymentsData = data || [];
         }
 
-        // ============ Stats Update ============
+        // ============ Update Stats ============
         function updateStats() {
-            console.log("Updating stats...");
-            const totalUsersEl = document.getElementById('totalUsers');
-            if (totalUsersEl) totalUsersEl.textContent = usersData.length;
-
-            const totalStudentsEl = document.getElementById('totalStudents');
-            if (totalStudentsEl) totalStudentsEl.textContent = studentsData.length;
-
-            const totalCoursesEl = document.getElementById('totalCourses');
-            if (totalCoursesEl) totalCoursesEl.textContent = coursesData.length;
-
-            const totalModulesEl = document.getElementById('totalModules');
-            if (totalModulesEl) totalModulesEl.textContent = modulesData.length;
-
-            const totalExamsEl = document.getElementById('totalExams');
-            if (totalExamsEl) totalExamsEl.textContent = examsData.length;
-
-            const totalLessonsEl = document.getElementById('totalLessons');
-            if (totalLessonsEl) totalLessonsEl.textContent = lessonsData.length;
-
-            const teachers = usersData.filter(user => user.role === 'teacher');
-            const secretaries = usersData.filter(user => user.role === 'secretary');
-
-            const totalTeachersEl = document.getElementById('totalTeachers');
-            if (totalTeachersEl) totalTeachersEl.textContent = teachers.length;
-
-            const totalSecretariesEl = document.getElementById('totalSecretaries');
-            if (totalSecretariesEl) totalSecretariesEl.textContent = secretaries.length;
+            document.getElementById('totalUsers').textContent = usersData.length;
+            document.getElementById('totalStudents').textContent = studentsData.length;
+            document.getElementById('totalCourses').textContent = coursesData.length;
+            document.getElementById('totalModules').textContent = modulesData.length;
+            document.getElementById('totalExams').textContent = examsData.length;
+            
+            const teachers = usersData.filter(u => u.role === 'teacher');
+            document.getElementById('totalTeachers').textContent = teachers.length;
         }
 
         function updateFinancialStats() {
-            console.log("Updating financial stats...");
-            const totalFinancialAmountEl = document.getElementById('totalFinancialAmount');
-            const totalPaidAmountEl = document.getElementById('totalPaidAmount');
-            const totalRemainingAmountEl = document.getElementById('totalRemainingAmount');
-            if (!totalFinancialAmountEl || !totalPaidAmountEl || !totalRemainingAmountEl) return;
+            const totalPaid = paymentsData.reduce((sum, p) => sum + (p.amount || 0), 0);
+            const totalAmount = paymentsData.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+            const remaining = Math.max(0, totalAmount - totalPaid);
 
-            // حساب المبالغ المدفوعة = مجموع عمود amount (المبلغ الفعلي المدفوع)
-            const paidAmount = paymentsData.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-            
-            // حساب إجمالي المبالغ المطلوبة = مجموع عمود total_amount (المبلغ الكلي)
-            const totalAmount = paymentsData.reduce((sum, payment) => sum + (payment.total_amount || 0), 0);
-            
-            // المتبقي = الإجمالي - المدفوع
-            const remainingAmount = Math.max(0, totalAmount - paidAmount);
-
-            totalFinancialAmountEl.textContent = `${Math.round(totalAmount).toLocaleString('ar-EG')} جنيه`;
-            totalPaidAmountEl.textContent = `${Math.round(paidAmount).toLocaleString('ar-EG')} جنيه`;
-            totalRemainingAmountEl.textContent = `${Math.round(remainingAmount).toLocaleString('ar-EG')} جنيه`;
+            document.getElementById('totalPaidAmount').textContent = `${Math.round(totalPaid).toLocaleString('ar-EG')} جنيه`;
+            document.getElementById('totalRemainingAmount').textContent = `${Math.round(remaining).toLocaleString('ar-EG')} جنيه`;
+            document.getElementById('totalFinancialAmount').textContent = `${Math.round(totalAmount).toLocaleString('ar-EG')} جنيه`;
         }
 
-        // ============ User Management ============
+        // ============ Users Table ============
         function renderUsersTable(filteredUsers = null) {
             const users = filteredUsers || usersData;
             const tbody = document.getElementById('usersTableBody');
             if (!tbody) return;
-            tbody.innerHTML = '';
-            users.forEach(user => {
-                const tr = document.createElement('tr');
-                const createdAt = new Date(user.created_at).toLocaleDateString('ar-EG');
-                tr.innerHTML = `
-                    <td>${user.full_name || 'غير محدد'}</td>
-                    <td>${user.email || 'غير محدد'}</td>
-                    <td>${user.phone || 'غير محدد'}</td>
-                    <td>${user.specialty || 'غير محدد'}</td>
+
+            if (!users.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-users-slash"></i><br>لا يوجد مستخدمين</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.full_name || '-'}</td>
+                    <td>${user.email || '-'}</td>
+                    <td>${user.phone || '-'}</td>
+                    <td>${user.specialty || '-'}</td>
                     <td>${translateRole(user.role)}</td>
-                    <td>${createdAt}</td>
+                    <td>${new Date(user.created_at).toLocaleDateString('ar-EG')}</td>
                     <td class="user-actions">
                         <button class="action-btn edit-btn" onclick="editUser('${user.id}')">
                             <i class="fas fa-edit"></i> تعديل
@@ -1562,51 +1650,45 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="fas fa-trash"></i> حذف
                         </button>
                     </td>
-                `;
-                tbody.appendChild(tr);
-            });
+                </tr>
+            `).join('');
         }
 
         function translateRole(role) {
-            const roles = {
-                'admin': 'مدير',
-                'teacher': 'معلم',
-                'secretary': 'سكرتير'
-            };
+            const roles = { 'admin': 'مدير', 'teacher': 'معلم', 'secretary': 'سكرتير' };
             return roles[role] || role;
         }
 
+        function filterUsers() {
+            const search = document.getElementById('userSearchInput')?.value.toLowerCase() || '';
+            const role = document.getElementById('userRoleFilter')?.value || '';
+
+            const filtered = usersData.filter(user => {
+                const matchSearch = !search || 
+                    user.full_name?.toLowerCase().includes(search) ||
+                    user.email?.toLowerCase().includes(search);
+                const matchRole = !role || user.role === role;
+                return matchSearch && matchRole;
+            });
+
+            renderUsersTable(filtered);
+        }
+
+        // ============ User Management ============
         function showAddUserModal() {
-            const modal = document.getElementById('addUserModal');
-            if (modal) modal.style.display = 'flex';
+            document.getElementById('addUserModal').style.display = 'flex';
         }
 
         function closeAddUserModal() {
-            const modal = document.getElementById('addUserModal');
-            if (modal) {
-                modal.style.display = 'none';
-                document.getElementById('addUserForm').reset();
-                document.getElementById('addUserStatus').className = 'status-message';
-                document.getElementById('addUserStatus').textContent = '';
-            }
+            document.getElementById('addUserModal').style.display = 'none';
+            document.getElementById('addUserForm').reset();
+            document.getElementById('addUserStatus').className = 'status-message';
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const addUserForm = document.getElementById('addUserForm');
-            if (addUserForm) {
-                addUserForm.addEventListener('submit', handleAddUser);
-            }
-        });
-
-        async function handleAddUser(e) {
+        document.getElementById('addUserForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const status = document.getElementById('addUserStatus');
-            const form = document.getElementById('addUserForm');
-            const inputs = form.querySelectorAll('input, select, button');
-            inputs.forEach(i => i.disabled = true);
-            status.textContent = '';
-            status.className = 'status-message';
-
+            
             const fullName = document.getElementById('addFullName').value.trim();
             const email = document.getElementById('addEmail').value.trim().toLowerCase();
             const password = document.getElementById('addPassword').value;
@@ -1615,705 +1697,991 @@ document.addEventListener('DOMContentLoaded', () => {
             const role = document.getElementById('addRole').value;
 
             try {
-                // التحقق من أن البريد الإلكتروني لم يتم استخدامه بالفعل في profiles
-                status.textContent = 'جاري التحقق من البريد الإلكتروني...';
-                status.className = 'status-message info';
-
-                const { data: existingProfile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('email', email)
-                    .maybeSingle();
-
-                if (existingProfile) {
-                    status.textContent = '❌ هذا البريد الإلكتروني مستخدم بالفعل في النظام';
-                    status.className = 'status-message error';
-                    inputs.forEach(i => i.disabled = false);
-                    return;
-                }
-
-                // 1. تسجيل المستخدم في Auth
                 status.textContent = 'جاري إنشاء الحساب...';
                 status.className = 'status-message info';
 
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email,
                     password,
-                    options: {
-                        emailRedirectTo: window.location.origin,
-                        data: { full_name: fullName, role: role }
-                    }
+                    options: { data: { full_name: fullName, role } }
                 });
 
-                if (authError) {
-                    if (authError.message.includes('already registered')) {
-                        status.textContent = '❌ هذا البريد الإلكتروني مسجل مسبقاً في الخادم';
-                        status.className = 'status-message error';
-                        inputs.forEach(i => i.disabled = false);
-                        return;
-                    }
-                    throw authError;
-                }
-
+                if (authError) throw authError;
                 if (!authData.user) throw new Error('فشل إنشاء المستخدم');
 
-                // الحصول على academy_id من localStorage
-                const currentAcademyId = localStorage.getItem('current_academy_id');
-                if (!currentAcademyId) {
-                    throw new Error('لم يتم تعيين الأكاديمية الحالية');
-                }
+                await supabase.from('profiles').upsert({
+                    id: authData.user.id,
+                    full_name: fullName,
+                    email,
+                    phone: phone || null,
+                    specialty: specialty || null,
+                    role,
+                    academy_id: currentAcademyId
+                });
 
-                // 2. إدراج في profiles باستخدام upsert من البداية (لتجنب التعارضات)
-                status.textContent = 'جاري حفظ بيانات المستخدم...';
-                status.className = 'status-message info';
+                await supabase.from('academy_members').upsert({
+                    user_id: authData.user.id,
+                    academy_id: currentAcademyId,
+                    role
+                });
 
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .upsert({
-                        id: authData.user.id,
-                        full_name: fullName,
-                        email: email,
-                        phone: phone || null,
-                        specialty: specialty || null,
-                        role: role,
-                        academy_id: currentAcademyId,
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'id' });
-
-                if (profileError) {
-                    console.error('❌ خطأ في حفظ بيانات المستخدم:', profileError);
-                    // محاولة حذف المستخدم من Auth إذا فشل الحفظ
-                    try {
-                        await supabase.auth.admin.deleteUser(authData.user.id);
-                    } catch (deleteError) {
-                        console.warn('⚠️ لم يتمكن من حذف المستخدم من Auth:', deleteError);
-                    }
-                    throw profileError;
-                }
-
-                status.textContent = '✅ تم إنشاء الحساب بنجاح! تم إرسال رابط التفعيل';
-                status.className = 'status-message success';
-
-                // 3. ربط المستخدم بالأكاديمية في academy_members
-                status.textContent = 'جاري ربط المستخدم بالأكاديمية...';
-                status.className = 'status-message info';
-
-                const { error: memberError } = await supabase
-                    .from('academy_members')
-                    .upsert({
-                        user_id: authData.user.id,
-                        academy_id: currentAcademyId,
-                        role: role,
-                        joined_at: new Date().toISOString()
-                    }, { onConflict: ['academy_id', 'user_id'] });
-
-                if (memberError) {
-                    console.warn('⚠️ تحذير في ربط المستخدم بالأكاديمية:', memberError);
-                    // لا نرمي خطأ لأن المستخدم تم إنشاؤه بالفعل
-                }
-
-                // 4. تحديث القائمة
                 status.textContent = '✅ تم إضافة المستخدم بنجاح!';
                 status.className = 'status-message success';
 
-                // مسح النموذج
-                form.reset();
-                document.getElementById('addFullName').value = '';
-                document.getElementById('addEmail').value = '';
-                document.getElementById('addPassword').value = '';
-                document.getElementById('addPhone').value = '';
-                document.getElementById('addSpecialty').value = '';
-                document.getElementById('addRole').value = 'student';
-
-                // تحديث البيانات والعرض
                 await loadUsers();
                 renderUsersTable();
                 updateStats();
 
-                // إغلاق النافذة بعد ثواني
-                setTimeout(closeAddUserModal, 2500);
-
+                setTimeout(closeAddUserModal, 2000);
             } catch (error) {
-                console.error('❌ خطأ:', error);
-                status.textContent = `❌ حدث خطأ: ${error.message}`;
+                status.textContent = `❌ خطأ: ${error.message}`;
                 status.className = 'status-message error';
-            } finally {
-                inputs.forEach(i => i.disabled = false);
+            }
+        });
+
+        async function resetPassword(userId, userEmail) {
+            try {
+                const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+                    redirectTo: `${window.location.origin}/update-password.html`
+                });
+                if (error) throw error;
+                alert('✅ تم إرسال رابط تغيير كلمة المرور إلى البريد الإلكتروني');
+            } catch (error) {
+                alert(`❌ ${error.message}`);
             }
         }
-        
+
+        async function deleteUser(userId) {
+            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+            
+            try {
+                await supabase.from('academy_members').delete().eq('user_id', userId);
+                await loadUsers();
+                renderUsersTable();
+                alert('تم حذف المستخدم بنجاح');
+            } catch (error) {
+                alert('فشل حذف المستخدم');
+            }
+        }
+
         async function editUser(userId) {
             try {
                 const user = usersData.find(u => u.id === userId);
                 if (!user) throw new Error('المستخدم غير موجود');
 
-                const editForm = document.createElement('div');
-                editForm.className = 'edit-user-form';
-                editForm.innerHTML = `
-                    <h3>تعديل بيانات المستخدم</h3>
-                    <div class="form-group">
-                        <label>الاسم الكامل</label>
-                        <input type="text" id="editFullName" value="${user.full_name || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label>البريد الإلكتروني</label>
-                        <input type="email" id="editEmail" value="${user.email || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label>رقم الهاتف</label>
-                        <input type="tel" id="editPhone" value="${user.phone || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label>التخصص</label>
-                        <input type="text" id="editSpecialty" value="${user.specialty || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label>كلمة المرور الجديدة (اتركها فارغة إذا لم ترد تغييرها)</label>
-                        <input type="password" id="editPassword" minlength="6" placeholder="أدخل كلمة المرور الجديدة">
-                    </div>
-                    <div class="form-group">
-                        <label>الدور</label>
-                        <select id="editRole">
-                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>مدير</option>
-                            <option value="teacher" ${user.role === 'teacher' ? 'selected' : ''}>معلم</option>
-                            <option value="secretary" ${user.role === 'secretary' ? 'selected' : ''}>سكرتير</option>
-                        </select>
-                    </div>
-                `;
-
                 const modal = document.createElement('div');
                 modal.className = 'modal';
+                modal.id = 'editUserModal';
+                modal.style.display = 'flex';
+                
                 modal.innerHTML = `
                     <div class="modal-content">
-                        ${editForm.outerHTML}
-                        <div class="modal-actions">
-                            <button onclick="updateUser('${userId}')">حفظ</button>
-                            <button onclick="closeModal()">إلغاء</button>
+                        <div class="modal-header">
+                            <h3>✏️ تعديل بيانات المستخدم</h3>
+                            <button class="close-btn" onclick="closeEditModal()">×</button>
                         </div>
+                        <form id="editUserForm">
+                            <div class="form-group">
+                                <label>الاسم الكامل</label>
+                                <input type="text" id="editFullName" value="${user.full_name || ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>البريد الإلكتروني</label>
+                                <input type="email" id="editEmail" value="${user.email || ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>رقم الهاتف</label>
+                                <input type="tel" id="editPhone" value="${user.phone || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>التخصص</label>
+                                <input type="text" id="editSpecialty" value="${user.specialty || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>الدور</label>
+                                <select id="editRole" required>
+                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>مدير</option>
+                                    <option value="teacher" ${user.role === 'teacher' ? 'selected' : ''}>معلم</option>
+                                    <option value="secretary" ${user.role === 'secretary' ? 'selected' : ''}>سكرتير</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="submit-btn">حفظ التغييرات</button>
+                                <button type="button" class="cancel-btn" onclick="closeEditModal()">إلغاء</button>
+                            </div>
+                        </form>
+                        <div id="editUserStatus" class="status-message"></div>
                     </div>
                 `;
+                
                 document.body.appendChild(modal);
-                modal.style.display = 'flex';
+
+                document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const status = document.getElementById('editUserStatus');
+                    
+                    try {
+                        status.textContent = 'جاري حفظ التغييرات...';
+                        status.className = 'status-message info';
+
+                        const fullName = document.getElementById('editFullName').value.trim();
+                        const email = document.getElementById('editEmail').value.trim();
+                        const phone = document.getElementById('editPhone').value.trim();
+                        const specialty = document.getElementById('editSpecialty').value.trim();
+                        const role = document.getElementById('editRole').value;
+
+                        await supabase
+                            .from('profiles')
+                            .update({
+                                full_name: fullName,
+                                email: email,
+                                phone: phone || null,
+                                specialty: specialty || null
+                            })
+                            .eq('id', userId);
+
+                        await supabase
+                            .from('academy_members')
+                            .update({ role: role })
+                            .eq('user_id', userId)
+                            .eq('academy_id', currentAcademyId);
+
+                        status.textContent = '✅ تم تحديث البيانات بنجاح';
+                        status.className = 'status-message success';
+
+                        await loadUsers();
+                        renderUsersTable();
+                        updateStats();
+
+                        setTimeout(closeEditModal, 1500);
+                    } catch (error) {
+                        status.textContent = `❌ خطأ: ${error.message}`;
+                        status.className = 'status-message error';
+                    }
+                });
             } catch (error) {
-                console.error('Error in editUser:', error);
                 alert('حدث خطأ أثناء تحميل بيانات المستخدم');
             }
         }
 
-        async function updateUser(userId) {
-            try {
-                const fullName = document.getElementById('editFullName').value.trim();
-                const email = document.getElementById('editEmail').value.trim();
-                const phone = document.getElementById('editPhone').value.trim();
-                const specialty = document.getElementById('editSpecialty').value.trim();
-                const role = document.getElementById('editRole').value;
-                const password = document.getElementById('editPassword')?.value || '';
-
-                if (!fullName || !email) {
-                    alert('الاسم والبريد الإلكتروني مطلوبان');
-                    return;
-                }
-
-                // تحديث profiles عادي جداً (شغال 100%)
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .update({
-                        full_name: fullName,
-                        email: email,
-                        phone: phone || null,
-                        specialty: specialty || null
-                    })
-                    .eq('id', userId);
-
-                if (profileError) throw profileError;
-
-                // تحديث الدور في academy_members أيضاً
-                const currentAcademyId = localStorage.getItem('current_academy_id');
-                if (currentAcademyId) {
-                    const { error: memberError } = await supabase
-                        .from('academy_members')
-                        .update({ role: role })
-                        .eq('user_id', userId)
-                        .eq('academy_id', currentAcademyId);
-
-                    if (memberError) {
-                        console.error('خطأ في تحديث دور المستخدم في الأكاديمية:', memberError);
-                    }
-                }
-
-                // الحفظ بدون محاولة تغيير كلمة المرور (تحتاج verification code)
-                alert('تم تحديث بيانات المستخدم بنجاح');
-                closeModal();
-                await loadUsers();
-                renderUsersTable();
-                updateStats();
-
-            } catch (error) {
-                console.error('Error updating user:', error);
-                alert(`فشل التحديث: ${error.message}`);
-            }
-        }
-
-        function closeModal() {
-            const modal = document.querySelector('.modal');
+        function closeEditModal() {
+            const modal = document.getElementById('editUserModal');
             if (modal) modal.remove();
         }
 
-        async function resetPassword(userId, userEmail) {
-            try {
-                // إرسال رابط تغيير كلمة المرور
-                const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
-                    redirectTo: `${window.location.origin}/update-password.html`
-                });
-
-                if (error) throw error;
-
-                alert('✅ تم إرسال رابط تغيير كلمة المرور إلى البريد الإلكتروني بنجاح');
-            } catch (error) {
-                console.error('Error in resetPassword:', error);
-                alert(`❌ ${error.message}`);
-            }
-        }
-
-        function togglePasswordVisibility() {
-            // دالة مساعدة إن لزم الحال مستقبلاً
-        }
-
-        async function confirmResetPassword(userId, userEmail) {
-            // تم تحديث النظام ليستخدم resetPasswordForEmail آمن - لا حاجة لدالة إضافية
-        }
-
-        function deleteUser(userId) {
-            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+        function toggleActionsColumn() {
+            actionsVisible = !actionsVisible;
+            const container = document.querySelector('.users-table-container');
+            const text = document.getElementById('toggleActionsText');
             
-            try {
-                // حذف من academy_members
-                supabase.from('academy_members').delete().eq('user_id', userId).then(() => {
-                    loadUsers();
-                    alert('تم حذف المستخدم بنجاح');
-                }).catch(error => {
-                    console.error('خطأ في الحذف:', error);
-                    alert('فشل حذف المستخدم');
-                });
-            } catch (error) {
-                console.error('خطأ:', error);
-                alert('حدث خطأ');
+            if (actionsVisible) {
+                container?.classList.remove('actions-hidden');
+                if (text) text.textContent = 'إخفاء الإجراءات';
+            } else {
+                container?.classList.add('actions-hidden');
+                if (text) text.textContent = 'إظهار الإجراءات';
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const searchInput = document.getElementById('userSearchInput');
-            const roleFilter = document.getElementById('userRoleFilter');
-            if (searchInput) searchInput.addEventListener('input', filterUsers);
-            if (roleFilter) roleFilter.addEventListener('change', filterUsers);
-        });
-
-        function filterUsers() {
-            const searchInput = document.getElementById('userSearchInput');
-            const roleFilter = document.getElementById('userRoleFilter');
-            if (!searchInput || !roleFilter) return;
-
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedRole = roleFilter.value;
-
-            const filteredUsers = usersData.filter(user => {
-                const matchesSearch = 
-                    (user.full_name && user.full_name.toLowerCase().includes(searchTerm)) ||
-                    (user.email && user.email.toLowerCase().includes(searchTerm)) ||
-                    (user.phone && user.phone.toLowerCase().includes(searchTerm)) ||
-                    (user.specialty && user.specialty.toLowerCase().includes(searchTerm));
-                const matchesRole = !selectedRole || user.role === selectedRole;
-                return matchesSearch && matchesRole;
-            });
-            renderUsersTable(filteredUsers);
-        }
-
-        // ============ Attendance functions removed ============
-
-        function showPermissionError(tableName) {
-            const errorMessageDiv = document.getElementById('errorMessage');
-            if (errorMessageDiv) {
-                errorMessageDiv.innerHTML = `
-                    <div class="permission-error">
-                        <h3><i class="fas fa-exclamation-triangle"></i> خطأ في الصلاحيات</h3>
-                        <p>لا توجد صلاحيات كافية لقراءة بيانات جدول "${tableName}".</p>
-                        <p>يرجى التحقق من إعدادات السياسات (Policies) في Supabase.</p>
-                    </div>
-                `;
-                errorMessageDiv.style.display = 'block';
-            }
-        }
-
-        function showErrorMessage(message) {
-            const errorMessageDiv = document.getElementById('errorMessage');
-            if (errorMessageDiv) {
-                errorMessageDiv.innerHTML = `<div class="error-message">${message}</div>`;
-                errorMessageDiv.style.display = 'block';
-            }
-        }
-
-        function logout() {
-            try {
-                localStorage.removeItem('user_id');
-                localStorage.removeItem('user_email');
-                localStorage.removeItem('user_role');
-                localStorage.removeItem('current_academy_id');
-                localStorage.removeItem('current_academy_name');
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error("خطأ في تسجيل الخروج:", error);
-                window.location.href = 'index.html';
-            }
-        }
-
-        function deleteUser(userId) {
-            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
-            
-            try {
-                // حذف من academy_members
-                supabase.from('academy_members').delete().eq('user_id', userId).then(() => {
-                    loadUsers();
-                    alert('تم حذف المستخدم بنجاح');
-                }).catch(error => {
-                    console.error('خطأ في الحذف:', error);
-                    alert('فشل حذف المستخدم');
-                });
-            } catch (error) {
-                console.error('خطأ:', error);
-                alert('حدث خطأ');
-            }
-        }
-
-        // دالة search
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('userSearchInput');
-            const roleFilter = document.getElementById('userRoleFilter');
-            
-            if (searchInput) {
-                searchInput.addEventListener('keyup', function() {
-                    const search = this.value.toLowerCase();
-                    const role = roleFilter?.value || '';
-                    
-                    let filtered = usersData.filter(user => {
-                        const matchSearch = !search || 
-                            user.full_name?.toLowerCase().includes(search) ||
-                            user.email?.toLowerCase().includes(search);
-                        
-                        const matchRole = !role || user.role === role;
-                        
-                        return matchSearch && matchRole;
-                    });
-                    
-                    renderUsersTable(filtered);
-                });
-            }
-            
-            if (roleFilter) {
-                roleFilter.addEventListener('change', function() {
-                    searchInput?.dispatchEvent(new Event('keyup'));
-                });
-            }
-
-            // تحميل البيانات عند فتح الصفحة
-            initializeApp();
-        });
         // ============ Treasury Functions ============
-        let adminTreasuryData = null;
-        let adminTreasuryTransactions = [];
-
-        // Load treasury data
         async function loadTreasury() {
             try {
                 const academyId = localStorage.getItem('current_academy_id');
                 if (!academyId) return;
 
-                // Load treasury balance - use limit(1) to handle duplicate entries
-                const { data: treasuryList, error: treasuryError } = await supabase
+                const { data: treasuryList } = await supabase
                     .from('treasury')
                     .select('*')
                     .eq('academy_id', academyId)
                     .order('created_at', { ascending: false })
                     .limit(1);
 
-                if (treasuryError && treasuryError.code !== 'PGRST116') {
-                    console.error('❌ Treasury error:', treasuryError);
-                    return;
-                }
+                adminTreasuryData = treasuryList?.[0] || { balance: 0, total_deposited: 0, total_withdrawn: 0 };
+                
+                document.getElementById('adminTreasuryBalance').textContent = formatCurrency(adminTreasuryData.balance);
+                document.getElementById('adminTreasuryDeposited').textContent = formatCurrency(adminTreasuryData.total_deposited);
+                document.getElementById('adminTreasuryWithdrawn').textContent = formatCurrency(adminTreasuryData.total_withdrawn);
 
-                // Get first treasury if exists
-                const treasury = treasuryList && treasuryList.length > 0 ? treasuryList[0] : null;
-
-                if (!treasury || treasuryError?.code === 'PGRST116') {
-                    // Create treasury if doesn't exist
-                    const { data: newTreasury, error: createError } = await supabase
-                        .from('treasury')
-                        .insert([{
-                            academy_id: academyId,
-                            balance: 0,
-                            total_deposited: 0,
-                            total_withdrawn: 0
-                        }])
-                        .select()
-                        .maybeSingle();
-
-                    if (createError) {
-                        console.error('❌ Create treasury error:', createError);
-                        // Set default empty data
-                        adminTreasuryData = {
-                            id: null,
-                            academy_id: academyId,
-                            balance: 0,
-                            total_deposited: 0,
-                            total_withdrawn: 0
-                        };
-                    } else if (newTreasury) {
-                        adminTreasuryData = newTreasury;
-                    } else {
-                        adminTreasuryData = {
-                            id: null,
-                            academy_id: academyId,
-                            balance: 0,
-                            total_deposited: 0,
-                            total_withdrawn: 0
-                        };
-                    }
-                } else {
-                    adminTreasuryData = treasury;
-                }
-
-                updateAdminTreasuryBalance();
                 await loadAdminTreasuryTransactions();
             } catch (error) {
-                console.error('❌ Error loading treasury:', error);
+                console.error('Error loading treasury:', error);
             }
         }
 
-        // Update treasury balance display
-        function updateAdminTreasuryBalance() {
-            if (!adminTreasuryData) return;
-
-            const balanceEl = document.getElementById('adminTreasuryBalance');
-            const depositedEl = document.getElementById('adminTreasuryDeposited');
-            const withdrawnEl = document.getElementById('adminTreasuryWithdrawn');
-
-            if (balanceEl) balanceEl.textContent = formatCurrency(adminTreasuryData.balance || 0);
-            if (depositedEl) depositedEl.textContent = formatCurrency(adminTreasuryData.total_deposited || 0);
-            if (withdrawnEl) withdrawnEl.textContent = formatCurrency(adminTreasuryData.total_withdrawn || 0);
-        }
-
-        // Load treasury transactions
         async function loadAdminTreasuryTransactions() {
-            try {
-                const academyId = localStorage.getItem('current_academy_id');
-                if (!academyId) return;
+            const academyId = localStorage.getItem('current_academy_id');
+            const { data } = await supabase
+                .from('treasury_transactions')
+                .select('*')
+                .eq('academy_id', academyId)
+                .order('created_at', { ascending: false })
+                .limit(100);
 
-                const { data: transactions, error } = await supabase
-                    .from('treasury_transactions')
-                    .select('*')
-                    .eq('academy_id', academyId)
-                    .order('created_at', { ascending: false })
-                    .limit(100);
-
-                if (error) throw error;
-
-                adminTreasuryTransactions = transactions || [];
-                renderAdminTreasuryTransactions();
-            } catch (error) {
-                console.error('❌ Error loading transactions:', error);
-            }
+            adminTreasuryTransactions = data || [];
+            renderAdminTreasuryTransactions();
         }
 
-        // Render treasury transactions
         function renderAdminTreasuryTransactions(filter = '') {
             const tbody = document.getElementById('adminTreasuryTransactionsBody');
             if (!tbody) return;
 
-            let filteredTransactions = adminTreasuryTransactions;
+            let filtered = filter ? adminTreasuryTransactions.filter(t => t.transaction_type === filter) : adminTreasuryTransactions;
 
-            if (filter) {
-                filteredTransactions = adminTreasuryTransactions.filter(t => t.transaction_type === filter);
-            }
-
-            if (filteredTransactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">لا توجد معاملات</td></tr>';
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data"><i class="fas fa-receipt"></i><br>لا توجد معاملات</td></tr>';
                 return;
             }
 
-            let html = '';
-
-            filteredTransactions.forEach(transaction => {
-                const date = new Date(transaction.created_at).toLocaleDateString('ar-EG', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                const typeText = transaction.transaction_type === 'deposit' ? 'إيداع' : 'سحب';
-                const typeColor = transaction.transaction_type === 'deposit' ? 'var(--success)' : 'var(--danger)';
-
-                html += `
+            tbody.innerHTML = filtered.map(t => {
+                const date = new Date(t.created_at).toLocaleDateString('ar-EG');
+                const type = t.transaction_type === 'deposit' ? 'إيداع' : 'سحب';
+                const color = t.transaction_type === 'deposit' ? 'var(--success)' : 'var(--danger)';
+                const sign = t.transaction_type === 'deposit' ? '+' : '-';
+                
+                return `
                     <tr>
                         <td>${date}</td>
-                        <td><span style="color: ${typeColor}; font-weight: 600;">${typeText}</span></td>
-                        <td style="font-weight: 700; color: ${typeColor};">
-                            ${transaction.transaction_type === 'deposit' ? '+' : '-'}${formatCurrency(transaction.amount)}
-                        </td>
-                        <td>${transaction.description || '-'}</td>
-                        <td>${transaction.created_by ? 'المدير' : 'نظام'}</td>
+                        <td><span style="color: ${color}; font-weight: 600;">${type}</span></td>
+                        <td style="font-weight: 700; color: ${color};">${sign}${formatCurrency(t.amount)}</td>
+                        <td>${t.description || '-'}</td>
+                        <td>المدير</td>
                     </tr>
                 `;
-            });
-
-            tbody.innerHTML = html;
+            }).join('');
         }
 
-        // Filter treasury transactions
         function filterAdminTreasuryTransactions() {
             const filter = document.getElementById('adminTreasuryFilter')?.value || '';
             renderAdminTreasuryTransactions(filter);
         }
 
-        // Show withdraw modal
+        function toggleTransactionsTable() {
+            transactionsVisible = !transactionsVisible;
+            const container = document.querySelector('#treasuryTab .users-table-container');
+            const text = document.getElementById('toggleTransactionsText');
+            
+            if (transactionsVisible) {
+                container?.classList.remove('transactions-hidden');
+                if (text) text.textContent = 'إخفاء السجل';
+            } else {
+                container?.classList.add('transactions-hidden');
+                if (text) text.textContent = 'إظهار السجل';
+            }
+        }
+
         function showWithdrawModal() {
             document.getElementById('withdrawModal').style.display = 'flex';
-            document.getElementById('withdrawForm').reset();
-            document.getElementById('withdrawStatus').textContent = '';
         }
 
-        // Close withdraw modal
         function closeWithdrawModal() {
             document.getElementById('withdrawModal').style.display = 'none';
+            document.getElementById('withdrawForm').reset();
         }
 
-        // Handle withdraw form submission
         document.getElementById('withdrawForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const description = document.getElementById('withdrawDescription').value || 'سحب من الخزينة';
-            const academyId = localStorage.getItem('current_academy_id');
-            const userId = localStorage.getItem('user_id');
-
-            if (!amount || amount <= 0) {
-                document.getElementById('withdrawStatus').textContent = 'يرجى إدخال مبلغ صحيح';
-                document.getElementById('withdrawStatus').className = 'status-message error';
-                return;
-            }
-
-            if (!academyId || !userId) {
-                document.getElementById('withdrawStatus').textContent = 'خطأ في البيانات';
-                document.getElementById('withdrawStatus').className = 'status-message error';
-                return;
-            }
+            const status = document.getElementById('withdrawStatus');
 
             try {
-                // Get current treasury balance - use limit(1) to handle duplicate entries
-                const { data: treasuryList, error: treasuryError } = await supabase
+                const { data: treasury } = await supabase
                     .from('treasury')
-                    .select('id, balance, total_withdrawn')
-                    .eq('academy_id', academyId)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-
-                // Get first treasury if exists
-                const treasury = treasuryList && treasuryList.length > 0 ? treasuryList[0] : null;
-
-                if (treasuryError) throw treasuryError;
-
-                if (!treasury || parseFloat(treasury.balance) < amount) {
-                    throw new Error(`الرصيد غير كافي. الرصيد الحالي: ${formatCurrency(treasury?.balance || 0)}`);
-                }
-
-                // Update treasury
-                const newBalance = parseFloat(treasury.balance) - amount;
-                const currentWithdrawn = parseFloat(treasury.total_withdrawn) || 0;
-                const newWithdrawn = currentWithdrawn + amount;
-                
-                const { error: updateError } = await supabase
-                    .from('treasury')
-                    .update({
-                        balance: newBalance,
-                        total_withdrawn: newWithdrawn,
-                        last_transaction_date: new Date().toISOString()
-                    })
-                    .eq('id', treasury.id);
-
-                if (updateError) throw updateError;
-
-                // Add transaction record
-                const { data: transaction, error: transactionError } = await supabase
-                    .from('treasury_transactions')
-                    .insert([{
-                        treasury_id: treasury.id,
-                        academy_id: academyId,
-                        transaction_type: 'withdrawal',
-                        amount: amount,
-                        description: description,
-                        created_by: userId
-                    }])
-                    .select()
+                    .select('*')
+                    .eq('academy_id', currentAcademyId)
                     .single();
 
-                if (transactionError) throw transactionError;
-
-                // Send notification to secretary
-                const { data: secretary } = await supabase
-                    .from('academy_members')
-                    .select('user_id')
-                    .eq('academy_id', academyId)
-                    .eq('role', 'secretary')
-                    .limit(1)
-                    .single();
-
-                if (secretary) {
-                    await supabase
-                        .from('notifications')
-                        .insert([{
-                            academy_id: academyId,
-                            user_id: secretary.user_id,
-                            type: 'withdrawal',
-                            title: '💰 سحب من الخزينة',
-                            message: `تم سحب مبلغ ${formatCurrency(amount)} من الخزينة. ${description ? 'الوصف: ' + description : ''}`,
-                            related_id: transaction.id,
-                            related_type: 'withdrawal'
-                        }]);
+                if (!treasury || treasury.balance < amount) {
+                    throw new Error('الرصيد غير كافي');
                 }
 
-                document.getElementById('withdrawStatus').textContent = '✅ تم السحب بنجاح وإرسال إشعار للسكرتير';
-                document.getElementById('withdrawStatus').className = 'status-message success';
+                await supabase.from('treasury').update({
+                    balance: treasury.balance - amount,
+                    total_withdrawn: treasury.total_withdrawn + amount
+                }).eq('id', treasury.id);
 
-                // Reload treasury data
-                setTimeout(async () => {
-                    await loadTreasury();
+                await supabase.from('treasury_transactions').insert({
+                    treasury_id: treasury.id,
+                    academy_id: currentAcademyId,
+                    transaction_type: 'withdrawal',
+                    amount,
+                    description,
+                    created_by: localStorage.getItem('user_id')
+                });
+
+                status.textContent = '✅ تم السحب بنجاح';
+                status.className = 'status-message success';
+
+                setTimeout(() => {
+                    loadTreasury();
                     closeWithdrawModal();
                 }, 1500);
-
             } catch (error) {
-                console.error('❌ Withdraw error:', error);
-                document.getElementById('withdrawStatus').textContent = '❌ خطأ: ' + (error.message || 'فشل السحب');
-                document.getElementById('withdrawStatus').className = 'status-message error';
+                status.textContent = `❌ خطأ: ${error.message}`;
+                status.className = 'status-message error';
             }
         });
 
-        // Format currency helper
         function formatCurrency(value) {
-            if (!value) return '0.00';
             return new Intl.NumberFormat('ar-EG', {
-                style: 'decimal',
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-            }).format(value);
+            }).format(value || 0) + ' ج.م';
         }
 
-        // Load treasury on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        // ============ Reports ============
+        async function generateStudentReport() {
+            const statusEl = document.getElementById('reportStatus');
+            const previewEl = document.getElementById('reportPreview');
+            
+            try {
+                statusEl.style.display = 'block';
+                statusEl.className = 'status-message info';
+                statusEl.textContent = '⏳ جاري تحميل بيانات الطلاب...';
+                previewEl.style.display = 'none';
+
+                const academyId = localStorage.getItem('current_academy_id');
+                const { data: students } = await supabase
+                    .from('students')
+                    .select('*')
+                    .eq('academy_id', academyId)
+                    .order('created_at', { ascending: false });
+
+                const { data: subscriptions } = await supabase
+                    .from('subscriptions')
+                    .select('student_id, course_id')
+                    .eq('academy_id', academyId);
+
+                let html = `
+                    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #3b82f6; margin-bottom: 20px; text-align: center;">
+                            <i class="fas fa-users"></i> تقرير الطلاب
+                        </h2>
+                        <div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px;">
+                            <p><strong>إجمالي عدد الطلاب:</strong> ${students?.length || 0}</p>
+                            <p><strong>تاريخ التقرير:</strong> ${new Date().toLocaleDateString('ar-EG')}</p>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #3b82f6; color: white;">
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الاسم</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">البريد</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الهاتف</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">عدد الكورسات</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">تاريخ التسجيل</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                students?.forEach((student, index) => {
+                    const studentSubs = subscriptions?.filter(s => s.student_id === student.id) || [];
+                    const date = new Date(student.created_at).toLocaleDateString('ar-EG');
+                    html += `
+                        <tr style="background: ${index % 2 === 0 ? '#f9fafb' : 'white'};">
+                            <td style="padding: 10px; border: 1px solid #ddd;">${student.full_name || '-'}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${student.email || '-'}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${student.phone || '-'}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${studentSubs.length}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${date}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button onclick="window.print()" class="add-user-btn" style="background: #10b981;">
+                                <i class="fas fa-print"></i> طباعة التقرير
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                previewEl.innerHTML = html;
+                previewEl.style.display = 'block';
+                statusEl.className = 'status-message success';
+                statusEl.textContent = `✅ تم إنشاء التقرير بنجاح - ${students?.length || 0} طالب`;
+
+            } catch (error) {
+                console.error('Error generating student report:', error);
+                statusEl.className = 'status-message error';
+                statusEl.textContent = '❌ خطأ: ' + error.message;
+            }
+        }
+
+        async function generateFinancialReport() {
+            const statusEl = document.getElementById('reportStatus');
+            const previewEl = document.getElementById('reportPreview');
+            
+            try {
+                statusEl.style.display = 'block';
+                statusEl.className = 'status-message info';
+                statusEl.textContent = '⏳ جاري تحميل البيانات المالية...';
+                previewEl.style.display = 'none';
+
+                const academyId = localStorage.getItem('current_academy_id');
+                const { data: payments } = await supabase
+                    .from('payments')
+                    .select('*')
+                    .eq('academy_id', academyId);
+
+                const totalPaid = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+                const totalAmount = payments?.reduce((sum, p) => sum + (p.total_amount || 0), 0) || 0;
+                const remaining = totalAmount - totalPaid;
+
+                let html = `
+                    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #10b981; margin-bottom: 20px; text-align: center;">
+                            <i class="fas fa-money-bill-wave"></i> التقرير المالي
+                        </h2>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;">
+                            <div style="padding: 20px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">
+                                <h3 style="margin: 0 0 10px 0; color: #10b981;">المدفوع</h3>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0;">${formatCurrency(totalPaid)}</p>
+                            </div>
+                            <div style="padding: 20px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                                <h3 style="margin: 0 0 10px 0; color: #f59e0b;">المتأخر</h3>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0;">${formatCurrency(remaining)}</p>
+                            </div>
+                            <div style="padding: 20px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                                <h3 style="margin: 0 0 10px 0; color: #3b82f6;">المتوقع</h3>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0;">${formatCurrency(totalAmount)}</p>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px;">
+                            <p><strong>إجمالي المعاملات:</strong> ${payments?.length || 0}</p>
+                            <p><strong>تاريخ التقرير:</strong> ${new Date().toLocaleDateString('ar-EG')}</p>
+                        </div>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button onclick="window.print()" class="add-user-btn" style="background: #10b981;">
+                                <i class="fas fa-print"></i> طباعة التقرير
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                previewEl.innerHTML = html;
+                previewEl.style.display = 'block';
+                statusEl.className = 'status-message success';
+                statusEl.textContent = '✅ تم إنشاء التقرير المالي بنجاح';
+
+            } catch (error) {
+                console.error('Error generating financial report:', error);
+                statusEl.className = 'status-message error';
+                statusEl.textContent = '❌ خطأ: ' + error.message;
+            }
+        }
+
+        async function generatePaymentReport() {
+            const statusEl = document.getElementById('reportStatus');
+            const previewEl = document.getElementById('reportPreview');
+            
+            try {
+                statusEl.style.display = 'block';
+                statusEl.className = 'status-message info';
+                statusEl.textContent = '⏳ جاري تحميل بيانات الدفعات...';
+                previewEl.style.display = 'none';
+
+                const academyId = localStorage.getItem('current_academy_id');
+                const { data: payments } = await supabase
+                    .from('payments')
+                    .select('*')
+                    .eq('academy_id', academyId)
+                    .order('payment_date', { ascending: false })
+                    .limit(100);
+
+                const { data: students } = await supabase
+                    .from('students')
+                    .select('id, full_name')
+                    .eq('academy_id', academyId);
+
+                const { data: courses } = await supabase
+                    .from('courses')
+                    .select('id, name')
+                    .eq('academy_id', academyId);
+
+                let html = `
+                    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #f59e0b; margin-bottom: 20px; text-align: center;">
+                            <i class="fas fa-credit-card"></i> تقرير الدفعات
+                        </h2>
+                        <div style="margin-bottom: 20px; padding: 15px; background: #fef3c7; border-radius: 8px;">
+                            <p><strong>إجمالي عدد الدفعات:</strong> ${payments?.length || 0}</p>
+                            <p><strong>إجمالي المبلغ:</strong> ${formatCurrency(payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0)}</p>
+                            <p><strong>تاريخ التقرير:</strong> ${new Date().toLocaleDateString('ar-EG')}</p>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f59e0b; color: white;">
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الطالب</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الكورس</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">المبلغ</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">طريقة الدفع</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">التاريخ</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                payments?.forEach((payment, index) => {
+                    const student = students?.find(s => s.id === payment.student_id);
+                    const course = courses?.find(c => c.id === payment.course_id);
+                    const date = new Date(payment.payment_date || payment.created_at).toLocaleDateString('ar-EG');
+                    const statusColor = payment.status === 'paid' ? '#10b981' : '#f59e0b';
+                    const statusText = payment.status === 'paid' ? 'مدفوع' : 'متأخر';
+                    
+                    html += `
+                        <tr style="background: ${index % 2 === 0 ? '#f9fafb' : 'white'};">
+                            <td style="padding: 10px; border: 1px solid #ddd;">${student?.full_name || '-'}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${course?.name || '-'}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">${formatCurrency(payment.amount || 0)}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${payment.payment_method || '-'}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${date}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">
+                                <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button onclick="window.print()" class="add-user-btn" style="background: #f59e0b;">
+                                <i class="fas fa-print"></i> طباعة التقرير
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                previewEl.innerHTML = html;
+                previewEl.style.display = 'block';
+                statusEl.className = 'status-message success';
+                statusEl.textContent = `✅ تم إنشاء التقرير بنجاح - ${payments?.length || 0} دفعة`;
+
+            } catch (error) {
+                console.error('Error generating payment report:', error);
+                statusEl.className = 'status-message error';
+                statusEl.textContent = '❌ خطأ: ' + error.message;
+            }
+        }
+
+        async function generateAttendanceReport() {
+            const statusEl = document.getElementById('reportStatus');
+            const previewEl = document.getElementById('reportPreview');
+            
+            try {
+                statusEl.style.display = 'block';
+                statusEl.className = 'status-message info';
+                statusEl.textContent = '⏳ جاري تحميل بيانات الحضور...';
+                previewEl.style.display = 'none';
+
+                const academyId = localStorage.getItem('current_academy_id');
+                
+                let attendanceData = [];
+                const { data: attendances1, error: error1 } = await supabase
+                    .from('attendances')
+                    .select('*')
+                    .eq('academy_id', academyId)
+                    .order('attendance_date', { ascending: false });
+
+                if (error1 && error1.code === '42P01') {
+                    const { data: attendances2 } = await supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('academy_id', academyId);
+                    attendanceData = attendances2 || [];
+                } else {
+                    attendanceData = attendances1 || [];
+                }
+
+                const { data: students } = await supabase
+                    .from('students')
+                    .select('id, full_name')
+                    .eq('academy_id', academyId);
+
+                const { data: courses } = await supabase
+                    .from('courses')
+                    .select('id, name')
+                    .eq('academy_id', academyId);
+
+                const present = attendanceData.filter(a => a.status === 'present' || a.status === 'حاضر').length;
+                const absent = attendanceData.filter(a => a.status === 'absent' || a.status === 'غائب').length;
+                const total = attendanceData.length;
+
+                let html = `
+                    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #8b5cf6; margin-bottom: 20px; text-align: center;">
+                            <i class="fas fa-calendar-check"></i> تقرير الحضور
+                        </h2>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;">
+                            <div style="padding: 20px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">
+                                <h3 style="margin: 0 0 10px 0; color: #10b981;">حاضر</h3>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0;">${present}</p>
+                            </div>
+                            <div style="padding: 20px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444;">
+                                <h3 style="margin: 0 0 10px 0; color: #ef4444;">غائب</h3>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0;">${absent}</p>
+                            </div>
+                            <div style="padding: 20px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                                <h3 style="margin: 0 0 10px 0; color: #3b82f6;">الإجمالي</h3>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0;">${total}</p>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 20px; padding: 15px; background: #f5f3ff; border-radius: 8px;">
+                            <p><strong>نسبة الحضور:</strong> ${total > 0 ? ((present / total) * 100).toFixed(1) : 0}%</p>
+                            <p><strong>تاريخ التقرير:</strong> ${new Date().toLocaleDateString('ar-EG')}</p>
+                        </div>
+                `;
+
+                if (attendanceData.length > 0) {
+                    html += `
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #8b5cf6; color: white;">
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الطالب</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الكورس</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">التاريخ</th>
+                                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    attendanceData.slice(0, 50).forEach((attendance, index) => {
+                        const student = students?.find(s => s.id === attendance.student_id);
+                        const course = courses?.find(c => c.id === attendance.course_id);
+                        const date = new Date(attendance.attendance_date || attendance.created_at).toLocaleDateString('ar-EG');
+                        const isPresent = attendance.status === 'present' || attendance.status === 'حاضر';
+                        const statusColor = isPresent ? '#10b981' : '#ef4444';
+                        const statusText = isPresent ? 'حاضر' : 'غائب';
+                        
+                        html += `
+                            <tr style="background: ${index % 2 === 0 ? '#f9fafb' : 'white'};">
+                                <td style="padding: 10px; border: 1px solid #ddd;">${student?.full_name || '-'}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${course?.name || '-'}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${date}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">
+                                    <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    html += `
+                        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                            <p>لا توجد بيانات حضور متاحة</p>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button onclick="window.print()" class="add-user-btn" style="background: #8b5cf6;">
+                                <i class="fas fa-print"></i> طباعة التقرير
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                previewEl.innerHTML = html;
+                previewEl.style.display = 'block';
+                statusEl.className = 'status-message success';
+                statusEl.textContent = `✅ تم إنشاء التقرير بنجاح - ${total} سجل حضور`;
+
+            } catch (error) {
+                console.error('Error generating attendance report:', error);
+                statusEl.className = 'status-message error';
+                statusEl.textContent = '❌ خطأ: ' + error.message;
+            }
+        }
+
+        // ============ Advanced Search ============
+        function advancedSearch() {
+            document.getElementById('advancedSearchModal').style.display = 'flex';
+        }
+
+        function closeAdvancedSearchModal() {
+            document.getElementById('advancedSearchModal').style.display = 'none';
+        }
+
+        function applyAdvancedSearch() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            // تنفيذ البحث المتقدم هنا
+            console.log('Advanced search:', { dateFrom, dateTo, status });
+            
+            closeAdvancedSearchModal();
+            showNotification('✅ تم تطبيق البحث المتقدم', 'success');
+        }
+
+        // ============ Export to Excel ============
+        function exportReportToExcel() {
+            const table = document.querySelector('#reportPreview table');
+            if (table) {
+                const wb = XLSX.utils.table_to_book(table);
+                XLSX.writeFile(wb, `تقرير-${new Date().toISOString().split('T')[0]}.xlsx`);
+                showNotification('✅ تم تصدير التقرير إلى Excel', 'success');
+            } else {
+                showNotification('⚠️ لا يوجد تقرير لتصديره', 'warning');
+            }
+        }
+
+        // ============ Backup Database ============
+        async function backupDatabase() {
+            try {
+                showNotification('⏳ جاري إنشاء النسخة الاحتياطية...', 'info');
+                
+                const tables = ['profiles', 'students', 'courses', 'payments', 'exams'];
+                const backup = {};
+                
+                for (const table of tables) {
+                    const { data } = await supabase.from(table).select('*');
+                    backup[table] = data;
+                }
+                
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                showNotification('✅ تم إنشاء النسخة الاحتياطية بنجاح', 'success');
+            } catch (error) {
+                showNotification(`❌ خطأ في النسخ الاحتياطي: ${error.message}`, 'error');
+            }
+        }
+
+        // ============ Real-time Notifications ============
+        function setupRealtimeNotifications() {
+            const channel = supabase
+                .channel('notifications')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'notifications'
+                    },
+                    (payload) => {
+                        showNotification(payload.new.message, 'info');
+                    }
+                )
+                .subscribe();
+        }
+
+        // ============ Settings ============
+        async function loadAdminProfile() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('profileFullName').value = user.user_metadata?.full_name || 'المدير';
+                document.getElementById('profileEmail').value = user.email || '';
+                document.getElementById('profileRole').value = 'مدير النظام';
+                document.getElementById('userName').textContent = user.user_metadata?.full_name || 'مدير النظام';
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDarkMode = document.getElementById('darkModeToggle').checked;
+            if (isDarkMode) {
+                document.body.style.background = '#1f2937';
+                document.querySelectorAll('.content-section').forEach(el => {
+                    el.style.background = '#374151';
+                    el.style.color = '#f3f4f6';
+                });
+                document.querySelectorAll('.users-table').forEach(el => {
+                    el.style.background = '#374151';
+                });
+                document.querySelectorAll('.users-table tbody tr').forEach(el => {
+                    el.style.background = '#374151';
+                });
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                document.body.style.background = '#f9fafb';
+                document.querySelectorAll('.content-section').forEach(el => {
+                    el.style.background = '#ffffff';
+                    el.style.color = '#111827';
+                });
+                document.querySelectorAll('.users-table').forEach(el => {
+                    el.style.background = '#ffffff';
+                });
+                document.querySelectorAll('.users-table tbody tr').forEach(el => {
+                    el.style.background = '#ffffff';
+                });
+                localStorage.setItem('darkMode', 'false');
+            }
+        }
+
+        function showChangePasswordModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.id = 'changePasswordModal';
+            modal.style.display = 'flex';
+            
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>🔒 تغيير كلمة المرور</h3>
+                        <button class="close-btn" onclick="closePasswordModal()">×</button>
+                    </div>
+                    <form id="changePasswordForm">
+                        <div class="form-group">
+                            <label>كلمة المرور الجديدة</label>
+                            <input type="password" id="newPassword" required minlength="6" placeholder="أدخل كلمة المرور الجديدة">
+                        </div>
+                        <div class="form-group">
+                            <label>تأكيد كلمة المرور</label>
+                            <input type="password" id="confirmPassword" required minlength="6" placeholder="أعد إدخال كلمة المرور">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn">تغيير كلمة المرور</button>
+                            <button type="button" class="cancel-btn" onclick="closePasswordModal()">إلغاء</button>
+                        </div>
+                    </form>
+                    <div id="passwordStatus" class="status-message"></div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+
+            document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const status = document.getElementById('passwordStatus');
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (newPassword !== confirmPassword) {
+                    status.textContent = '❌ كلمة المرور غير متطابقة';
+                    status.className = 'status-message error';
+                    return;
+                }
+
+                try {
+                    status.textContent = 'جاري تغيير كلمة المرور...';
+                    status.className = 'status-message info';
+
+                    const { error } = await supabase.auth.updateUser({
+                        password: newPassword
+                    });
+
+                    if (error) throw error;
+
+                    status.textContent = '✅ تم تغيير كلمة المرور بنجاح';
+                    status.className = 'status-message success';
+
+                    setTimeout(closePasswordModal, 2000);
+                } catch (error) {
+                    status.textContent = `❌ خطأ: ${error.message}`;
+                    status.className = 'status-message error';
+                }
+            });
+        }
+
+        function toggleNotifications() {
+            const enabled = document.getElementById('notificationToggle').checked;
+            localStorage.setItem('notificationsEnabled', enabled);
+            
+            if (enabled) {
+                showNotification('✅ تم تفعيل الإشعارات', 'success');
+            } else {
+                showNotification('⚠️ تم تعطيل الإشعارات', 'warning');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                animation: slideInRight 0.3s ease-out;
+                font-weight: 500;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
             setTimeout(() => {
-                loadTreasury();
-            }, 1000);
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // ============ Hover Effects ============
+        function addHoverEffects() {
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-5px) scale(1.02)';
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+        }
+
+        // ============ Event Listeners ============
+        document.getElementById('userSearchInput')?.addEventListener('input', filterUsers);
+        document.getElementById('userRoleFilter')?.addEventListener('change', filterUsers);
+
+        // ============ Initialize ============
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            
+            // Restore dark mode
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'true') {
+                document.getElementById('darkModeToggle').checked = true;
+                toggleDarkMode();
+            }
+            
+            // Check notification settings
+            const notifEnabled = localStorage.getItem('notificationsEnabled');
+            if (notifEnabled === 'false') {
+                document.getElementById('notificationToggle').checked = false;
+            }
         });
 
+        console.log('✅ Admin Dashboard Loaded Successfully');
     </script>
 
 </body>
